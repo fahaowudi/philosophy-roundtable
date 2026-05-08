@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { PHILOSOPHERS } from "@/lib/ai/philosophers";
 
@@ -46,21 +47,30 @@ export function PhilosophersShowcase() {
               <motion.div
                 key={p.id}
                 variants={item}
-                className="min-w-[260px] rounded-[1.75rem] border border-border/40 bg-white/50 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/70 hover:shadow-lg md:min-w-0"
+                className="group min-w-[260px] overflow-hidden rounded-[1.75rem] border border-border/40 bg-white/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/70 hover:shadow-lg md:min-w-0"
                 style={{ ["--ph-color" as string]: color }}
               >
-                <div className="mb-4 text-5xl">{p.avatar}</div>
-                <h3 className="font-serif text-xl font-semibold text-foreground">
-                  {p.name}
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">{p.era}</p>
-                <div
-                  className="mx-auto mt-3 h-1 w-8 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <p className="mt-3 text-sm italic leading-6 text-muted-foreground">
-                  &ldquo;{p.quotes[0]}&rdquo;
-                </p>
+                <div className="relative aspect-[3/4] w-full overflow-hidden">
+                  <Image
+                    src={p.image}
+                    alt={p.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-5 text-center">
+                  <h3 className="font-serif text-xl font-semibold text-foreground">
+                    {p.name}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{p.era}</p>
+                  <div
+                    className="mx-auto mt-3 h-1 w-8 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <p className="mt-3 text-sm italic leading-6 text-muted-foreground">
+                    &ldquo;{p.quotes[0]}&rdquo;
+                  </p>
+                </div>
               </motion.div>
             );
           })}
