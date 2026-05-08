@@ -308,7 +308,7 @@ export function DiscussionFlow({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-1 flex-col overflow-hidden">
       <div className="mb-6 rounded-[2rem] border border-white/40 p-5 glass-strong shadow-glass sm:p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">

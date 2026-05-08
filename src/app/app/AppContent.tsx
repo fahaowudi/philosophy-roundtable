@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { DiscussionFlow } from "@/components/DiscussionFlow";
@@ -28,6 +28,7 @@ const IMMERSIVE_STEPS: Step[] = ["discussion", "historyDetail"];
 
 function Home() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>("home");
   const [topic, setTopic] = useState("");
   const [selectedPhilosophers, setSelectedPhilosophers] = useState<
@@ -129,13 +130,22 @@ function Home() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-50 border-b border-white/30 glass-strong shadow-glass">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <button
-            type="button"
-            className="text-left text-base font-semibold text-card-foreground transition-colors hover:text-primary"
-            onClick={() => setCurrentStep("home")}
-          >
-            哲学圆桌会
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="cursor-pointer text-left text-base font-semibold text-card-foreground transition-colors hover:text-primary"
+              onClick={() => setCurrentStep("home")}
+            >
+              哲学圆桌会
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="cursor-pointer rounded-full px-3 py-1 text-xs text-subtle transition-colors hover:bg-white/60 hover:text-primary"
+            >
+              回首页
+            </button>
+          </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             <Button

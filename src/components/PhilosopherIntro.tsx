@@ -44,7 +44,7 @@ export function PhilosopherIntro({ onStart, onBack }: PhilosopherIntroProps) {
             className="overflow-hidden rounded-[2rem] border border-border/80 shadow-glass glass"
           >
             <div className="flex flex-col md:flex-row">
-              <div className="relative aspect-[4/3] w-full md:aspect-auto md:h-auto md:w-64 md:min-h-[280px] md:shrink-0">
+              <div className="relative aspect-[1/2] w-full md:aspect-auto md:h-auto md:w-48 md:min-h-[320px] md:shrink-0">
                 <Image
                   src={philosopher.image}
                   alt={philosopher.name}

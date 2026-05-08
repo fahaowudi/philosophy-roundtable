@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PHILOSOPHERS } from "@/lib/ai/philosophers";
 import { Message } from "@/types/discussion";
 
 interface DialogueBubbleProps {
@@ -58,23 +59,17 @@ export function DialogueBubble({
       {...bubbleMotion}
       className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4"
     >
-      <Avatar
-        className={
-          message.philosopherId === "socrates"
-            ? "h-10 w-10 shrink-0 bg-blue-500 sm:h-12 sm:w-12"
-            : message.philosopherId === "kant"
-              ? "h-10 w-10 shrink-0 bg-purple-500 sm:h-12 sm:w-12"
-              : message.philosopherId === "confucius"
-                ? "h-10 w-10 shrink-0 bg-amber-500 sm:h-12 sm:w-12"
-                : message.philosopherId === "nietzsche"
-                  ? "h-10 w-10 shrink-0 bg-red-500 sm:h-12 sm:w-12"
-                  : "h-10 w-10 shrink-0 bg-teal-500 sm:h-12 sm:w-12"
-        }
-      >
-        <AvatarFallback className="text-base font-bold text-white sm:text-lg">
-          {message.philosopherName.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full sm:h-12 sm:w-12">
+        <Image
+          src={
+            PHILOSOPHERS.find((p) => p.id === message.philosopherId)?.image ??
+            "/philosophers/socrates.png"
+          }
+          alt={message.philosopherName}
+          fill
+          className="object-cover"
+        />
+      </div>
 
       <div className="min-w-0 flex-1">
         <div className="mb-2 flex flex-wrap items-center gap-2">

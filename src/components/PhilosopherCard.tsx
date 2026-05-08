@@ -33,7 +33,7 @@ export function PhilosopherCard({
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
+      <div className="relative aspect-[1/2] w-full overflow-hidden">
         <Image
           src={philosopher.image}
           alt={philosopher.name}

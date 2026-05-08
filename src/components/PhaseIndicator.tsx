@@ -25,7 +25,9 @@ export function PhaseIndicator({
   const currentIndex = phases.findIndex((item) => item.key === phase);
   const progress = round === 0 ? 0 : Math.min((round / maxRounds) * 100, 100);
   const roundLabel =
-    round === 0 ? "尚未开始" : `第 ${Math.min(round, maxRounds)} / ${maxRounds} 轮`;
+    round === 0
+      ? "尚未开始"
+      : `第 ${Math.min(round, maxRounds)} / ${maxRounds} 轮`;
 
   return (
     <div className="space-y-4">
@@ -36,10 +38,12 @@ export function PhaseIndicator({
 
           return (
             <div key={item.key} className="flex items-center gap-2">
-              {index > 0 && <div className="hidden h-px w-6 bg-border sm:block" />}
-              <div className="flex items-center gap-2">
+              {index > 0 && (
+                <div className="hidden h-px w-8 bg-border sm:block" />
+              )}
+              <div className="flex items-center gap-2.5">
                 <div
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs transition-all duration-500 ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-500 sm:h-8 sm:w-8 ${
                     isCompleted
                       ? "bg-secondary text-white"
                       : isCurrent
@@ -47,15 +51,15 @@ export function PhaseIndicator({
                         : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {isCompleted ? <Check className="h-3 w-3" /> : index + 1}
+                  {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
                 </div>
                 <span
-                  className={`text-xs font-medium transition-colors duration-300 sm:text-sm ${
+                  className={`text-sm transition-colors duration-300 sm:text-base ${
                     isCurrent
-                      ? "text-primary"
+                      ? "font-semibold text-primary"
                       : isCompleted
-                        ? "text-secondary"
-                        : "text-muted-foreground"
+                        ? "font-medium text-secondary"
+                        : "font-medium text-muted-foreground"
                   }`}
                 >
                   {item.label}
@@ -75,7 +79,7 @@ export function PhaseIndicator({
             transition={{ duration: 0.6, ease: "easeOut" }}
           />
         </div>
-        <span className="whitespace-nowrap text-xs text-subtle sm:text-sm">
+        <span className="whitespace-nowrap text-xs font-medium text-muted-foreground sm:text-sm">
           {roundLabel}
         </span>
       </div>

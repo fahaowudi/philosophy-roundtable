@@ -50,7 +50,7 @@ export function PhilosophersShowcase() {
                 className="group min-w-[260px] overflow-hidden rounded-[1.75rem] border border-border/40 bg-white/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/70 hover:shadow-lg md:min-w-0"
                 style={{ ["--ph-color" as string]: color }}
               >
-                <div className="relative aspect-[3/4] w-full overflow-hidden">
+                <div className="relative aspect-[1/2] w-full overflow-hidden">
                   <Image
                     src={p.image}
                     alt={p.name}
