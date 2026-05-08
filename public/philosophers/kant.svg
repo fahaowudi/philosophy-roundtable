@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#5b21b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <circle cx="200" cy="160" r="80" fill="rgba(255,255,255,0.15)"/>
+  <text x="200" y="195" text-anchor="middle" font-family="Georgia,serif" font-size="100" fill="rgba(255,255,255,0.9)">K</text>
+  <text x="200" y="340" text-anchor="middle" font-family="sans-serif" font-size="32" font-weight="bold" fill="white">康德</text>
+  <text x="200" y="380" text-anchor="middle" font-family="sans-serif" font-size="16" fill="rgba(255,255,255,0.7)">Immanuel Kant · 1724-1804</text>
+  <line x1="140" y1="410" x2="260" y2="410" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <text x="200" y="440" text-anchor="middle" font-family="sans-serif" font-size="13" fill="rgba(255,255,255,0.6)">头顶的星空与心中的道德律</text>
+</svg>

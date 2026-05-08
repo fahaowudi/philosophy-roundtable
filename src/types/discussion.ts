@@ -4,10 +4,12 @@ export interface Philosopher {
   name: string;
   era: string;
   avatar: string;
+  image: string;
   color: string;
   systemPrompt: string;
   coreIdeas: string[];
   quotes: string[];
+  bio: string;
 }
 
 // 对话消息
@@ -19,7 +21,7 @@ export interface Message {
   timestamp: Date;
   replyTo?: string; // 回复的消息ID
   replyToName?: string; // 回复的哲学家名字
-  phase: 'defining' | 'debating' | 'concluding' | 'narrator';
+  phase: "defining" | "debating" | "concluding" | "narrator";
 }
 
 // 对话会话
@@ -33,4 +35,4 @@ export interface Discussion {
 }
 
 // 对话阶段
-export type DiscussionPhase = 'defining' | 'debating' | 'concluding';
+export type DiscussionPhase = "defining" | "debating" | "concluding";

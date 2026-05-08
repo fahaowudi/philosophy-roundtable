@@ -1,61 +1,65 @@
-// AI 旁白 System Prompt
+import { DiscussionPhase, Message } from "@/types/discussion";
+
 export const NARRATOR_SYSTEM_PROMPT = `你是一位哲学讨论的旁白和总结者。
 
-任务：
-- 每3-4轮对话后，总结哲学家们的核心观点
-- 帮助用户理解讨论的进展和分歧
-- 指出关键的思想碰撞点
-- 语言简洁明了，80字以内
+你的任务是：
+- 提炼最近一段讨论中的核心观点、分歧与推进点
+- 用克制、准确的语言帮助用户理解讨论进展
+- 保持客观中立，不偏袒任何一位哲学家
+- 总结控制在 80 字以内，除非用户明确要求展开`;
 
-风格：
-- 客观中立
-- 不偏袒任何一方
-- 突出思想的价值
-- 启发用户思考`;
-
-// 获取当前阶段的任务描述
-export function getPhaseTask(phase: 'defining' | 'debating' | 'concluding', topic: string): string {
+export function getPhaseTask(phase: DiscussionPhase, topic: string): string {
   switch (phase) {
-    case 'defining':
-      return `请对"${topic}"这个问题进行初步的定义和概念澄清。不要直接给出答案，而是先探讨问题的本质和涉及的核心概念。`;
-    case 'debating':
-      return `现在进入观点交锋阶段。请回应其他哲学家的观点，提出自己的看法，可以质疑、补充或发展已有的讨论。保持思辨的深度。`;
-    case 'concluding':
-      return `讨论接近尾声，请总结你对"${topic}"的核心见解，提供启发性的思考方向，而不是标准答案。`;
+    case "defining":
+      return `请先界定“${topic}”所涉及的关键概念与问题边界，不急于下结论，而是帮助用户看清问题的真正指向。`;
+    case "debating":
+      return `现在进入观点交锋阶段。请回应其他哲学家的看法，提出支持、质疑或修正，并继续推进对“${topic}”的讨论。`;
+    case "concluding":
+      return `现在进入收束阶段。请总结你对“${topic}”的核心判断，并给出能够启发进一步思考的方向，而不是标准答案。`;
     default:
       return topic;
   }
 }
 
-// 生成对话历史上下文
-export function generateChatHistory(messages: any[], currentPhilosopherId: string): string {
-  const recentMessages = messages.slice(-3);
-  if (recentMessages.length === 0) return '';
+export function generateChatHistory(messages: Message[]): string {
+  const recentMessages = messages
+    .filter((message) => message.phase !== "narrator")
+    .slice(-3);
 
-  let history = '最近的讨论：\n';
-  recentMessages.forEach((msg, index) => {
-    if (msg.phase !== 'narrator') {
-      const prefix = msg.replyToName ? `[回复${msg.replyToName}] ` : '';
-      history += `${msg.philosopherName}: ${prefix}${msg.content}\n`;
-    }
-  });
+  if (recentMessages.length === 0) {
+    return "";
+  }
 
-  return history;
+  const historyBody = recentMessages
+    .map((message) => {
+      const replyPrefix = message.replyToName
+        ? `[回应 ${message.replyToName}] `
+        : "";
+
+      return `${message.philosopherName}: ${replyPrefix}${message.content}`;
+    })
+    .join("\n");
+
+  return `最近的讨论：\n${historyBody}`;
 }
 
-// 检测回复目标
-export function generateReplyDetectionPrompt(content: string, history: any[]): string {
+export function generateReplyDetectionPrompt(
+  content: string,
+  history: Message[]
+): string {
   const historyText = history
+    .filter((message) => message.phase !== "narrator")
     .slice(-3)
-    .map((m) => `${m.philosopherName}: ${m.content}`)
-    .join('\n');
+    .map((message) => `${message.philosopherName}: ${message.content}`)
+    .join("\n");
 
-  return `分析这段话在回应谁的观点：
+  return `请判断下面这段发言是否在回应某位哲学家的观点。
 
+发言内容：
 ${content}
 
-历史对话：
-${historyText || '（这是第一条发言）'}
+最近的历史讨论：
+${historyText || "（这是第一条发言）"}
 
-如果是对某人的回应，返回人名；如果是新观点，返回"null"。只返回人名，不要其他内容。`;
+如果它是在直接回应某位哲学家，请只返回那位哲学家的名字；如果不是，请只返回 "null"。`;
 }

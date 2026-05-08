@@ -1,37 +1,65 @@
-import { useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from "react";
+
+type BrowserWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
 
 export const useMessageSound = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  useEffect(() => {
+    return () => {
+      const audioContext = audioContextRef.current;
+
+      if (!audioContext) {
+        return;
+      }
+
+      audioContextRef.current = null;
+      void audioContext.close().catch(() => undefined);
+    };
+  }, []);
+
   const playMessageSound = useCallback(() => {
     try {
-      // 创建AudioContext（如果还没有）
+      const audioWindow = window as BrowserWindow;
+      const AudioContextClass =
+        audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+
+      if (!AudioContextClass) {
+        return;
+      }
+
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new AudioContextClass();
       }
 
       const audioContext = audioContextRef.current;
 
-      // 创建振荡器
+      if (audioContext.state === "suspended") {
+        void audioContext.resume().catch(() => undefined);
+      }
+
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
-      // 连接节点
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      // 设置音调和音量
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.type = 'sine';
+      oscillator.type = "sine";
 
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.18, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.12
+      );
 
-      // 播放
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
+      oscillator.stop(audioContext.currentTime + 0.12);
     } catch (error) {
-      console.error('播放音效失败:', error);
+      console.error("播放提示音失败:", error);
     }
   }, []);
 

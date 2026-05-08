@@ -1,36 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Philosopher } from '@/types/discussion';
-import { PhilosopherCard } from './PhilosopherCard';
-import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
-import { PHILOSOPHERS, RECOMMENDED_LINEUP } from '@/lib/ai/philosophers';
+import { useState } from "react";
+import { Users } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { PHILOSOPHERS, RECOMMENDED_LINEUP } from "@/lib/ai/philosophers";
+import { Philosopher } from "@/types/discussion";
+import { PhilosopherCard } from "./PhilosopherCard";
 
 interface PhilosopherSelectorProps {
   onSelect: (philosophers: Philosopher[]) => void;
   isLoading?: boolean;
+  onBack?: () => void;
 }
 
-export function PhilosopherSelector({ onSelect, isLoading = false }: PhilosopherSelectorProps) {
+export function PhilosopherSelector({
+  onSelect,
+  isLoading = false,
+  onBack,
+}: PhilosopherSelectorProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>(RECOMMENDED_LINEUP);
 
   const togglePhilosopher = (philosopher: Philosopher) => {
     setSelectedIds((prev) => {
       if (prev.includes(philosopher.id)) {
-        // 至少保留1位
         if (prev.length <= 1) return prev;
         return prev.filter((id) => id !== philosopher.id);
-      } else {
-        // 最多5位
-        if (prev.length >= 5) return prev;
-        return [...prev, philosopher.id];
       }
+
+      if (prev.length >= 5) return prev;
+      return [...prev, philosopher.id];
     });
   };
 
   const handleContinue = () => {
-    const selected = PHILOSOPHERS.filter((p) => selectedIds.includes(p.id));
+    const selected = PHILOSOPHERS.filter((philosopher) =>
+      selectedIds.includes(philosopher.id),
+    );
     onSelect(selected);
   };
 
@@ -39,33 +45,53 @@ export function PhilosopherSelector({ onSelect, isLoading = false }: Philosopher
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* 标题区域 - 简约风格 */}
-      <div className="text-center mb-16">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6" style={{ backgroundColor: '#A3B18A' }}>
-          <Users className="h-10 w-10" style={{ color: '#FFFFFF' }} />
+    <div className="mx-auto max-w-6xl">
+      {onBack && (
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="rounded-full px-4 text-card-foreground hover:bg-white/70 hover:text-primary"
+          >
+            ← 返回
+          </Button>
         </div>
-        <h1 className="text-6xl font-bold mb-4 tracking-tight" style={{ color: '#000000' }}>
+      )}
+
+      <div className="mb-10 text-center sm:mb-14">
+        <div className="mb-6 inline-flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full glass shadow-glass sm:h-20 sm:w-20">
+          <Users className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
           选择哲学家
         </h1>
-        <p className="text-xl max-w-2xl mx-auto" style={{ color: '#666666', lineHeight: '1.6' }}>
-          选择 1-5 位哲学家参与圆桌讨论
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+          选择 1 到 5
+          位哲学家加入这场圆桌讨论，让问题从不同传统和立场中被真正打开。
         </p>
       </div>
 
-      {/* 推荐阵容 */}
-      <div className="mb-12 text-center">
-        <button
+      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-white/35 p-5 glass-strong shadow-glass sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+          <p className="text-sm font-medium text-card-foreground">当前选择</p>
+          <p className="mt-1 text-sm leading-6 text-subtle">
+            已选择{" "}
+            <span className="font-semibold text-primary">
+              {selectedIds.length}
+            </span>{" "}
+            位哲学家，至少 1 位，至多 5 位。
+          </p>
+        </div>
+        <Button
+          variant="outline"
           onClick={useRecommended}
-          className="px-8 py-4 rounded-full border-2 text-base font-normal hover:bg-primary hover:text-white hover:border-primary transition-all"
-          style={{ borderColor: '#E0E0E0', color: '#333333' }}
+          className="h-auto whitespace-normal rounded-full border-border px-6 py-3 text-sm font-normal transition-all hover:border-primary hover:bg-primary hover:text-white sm:text-base"
         >
           使用推荐阵容（苏格拉底、康德、孔子）
-        </button>
+        </Button>
       </div>
 
-      {/* 哲学家卡片网格 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {PHILOSOPHERS.map((philosopher) => (
           <PhilosopherCard
             key={philosopher.id}
@@ -80,20 +106,22 @@ export function PhilosopherSelector({ onSelect, isLoading = false }: Philosopher
         ))}
       </div>
 
-      {/* 底部操作栏 */}
-      <div className="flex items-center justify-center gap-8 p-8 rounded-3xl" style={{ backgroundColor: '#F5F5F5' }}>
-        <p className="text-base" style={{ color: '#666666' }}>
-          已选择 <span className="font-bold text-xl" style={{ color: '#2D5A3A' }}>{selectedIds.length}</span> 位哲学家
+      <div className="flex flex-col gap-4 rounded-[2rem] border border-white/35 p-5 glass shadow-glass sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+          你将邀请{" "}
+          <span className="text-xl font-bold text-primary">
+            {selectedIds.length}
+          </span>{" "}
+          位哲学家围绕同一问题展开讨论。
         </p>
-        <button
+        <Button
           onClick={handleContinue}
           disabled={selectedIds.length === 0 || isLoading}
-          className="px-8 py-3 rounded-full text-base font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: '#2D5A3A', color: '#FFFFFF' }}
-          disabled={selectedIds.length === 0 || isLoading}
+          size="lg"
+          className="rounded-full px-8 text-base"
         >
           开始讨论
-        </button>
+        </Button>
       </div>
     </div>
   );

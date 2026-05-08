@@ -1,19 +1,25 @@
-'use client';
+"use client";
 
-import { DiscussionHistory } from '@/types/history';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Clock, MessageSquare, RefreshCw } from 'lucide-react';
+import { Clock, MessageSquare, RefreshCw, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { DiscussionHistory } from "@/types/history";
 
 interface HistoryListProps {
   histories: DiscussionHistory[];
   onSelect: (history: DiscussionHistory) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
+  onBack?: () => void;
 }
 
-export function HistoryList({ histories, onSelect, onDelete, onRefresh }: HistoryListProps) {
+export function HistoryList({
+  histories,
+  onSelect,
+  onDelete,
+  onRefresh,
+  onBack,
+}: HistoryListProps) {
   const formatDate = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -23,96 +29,136 @@ export function HistoryList({ histories, onSelect, onDelete, onRefresh }: Histor
       const hours = Math.floor(diff / (1000 * 60 * 60));
       if (hours === 0) {
         const minutes = Math.floor(diff / (1000 * 60));
-        return minutes === 0 ? '刚刚' : `${minutes}分钟前`;
+        return minutes === 0 ? "刚刚" : `${minutes} 分钟前`;
       }
-      return `${hours}小时前`;
-    } else if (days === 1) {
-      return '昨天';
-    } else if (days < 7) {
-      return `${days}天前`;
-    } else {
-      return date.toLocaleDateString('zh-CN');
+      return `${hours} 小时前`;
     }
+
+    if (days === 1) {
+      return "昨天";
+    }
+
+    if (days < 7) {
+      return `${days} 天前`;
+    }
+
+    return date.toLocaleDateString("zh-CN");
   };
+
+  const getSummary = (history: DiscussionHistory): string | null => {
+    const narratorMessages = history.messages.filter(
+      (message) => message.phase === "narrator",
+    );
+    return narratorMessages.length > 0
+      ? narratorMessages[narratorMessages.length - 1].content
+      : null;
+  };
+
+  const getMessageCount = (history: DiscussionHistory) =>
+    history.messages.filter((message) => message.phase !== "narrator").length;
+
+  const getPhilosopherCount = (history: DiscussionHistory) =>
+    history.philosophers.length;
 
   if (histories.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="rounded-3xl p-12 max-w-md mx-auto" style={{ backgroundColor: '#F5F5F5' }}>
-          <MessageSquare className="h-16 w-16 mx-auto mb-4" style={{ color: '#2D5A3A' }} />
-          <p className="text-xl mb-2" style={{ color: '#000000' }}>暂无对话记录</p>
-          <p className="text-sm" style={{ color: '#999999' }}>完成一场讨论后，可以在这里查看历史记录</p>
+      <div className="py-16 text-center">
+        <div className="mx-auto max-w-md rounded-[2rem] border border-white/35 p-10 glass shadow-glass sm:p-12">
+          <MessageSquare className="mx-auto mb-4 h-16 w-16 text-primary" />
+          <p className="mb-2 text-xl text-foreground">暂无对话记录</p>
+          <p className="text-sm text-subtle">
+            完成一场讨论后，这里会保留你的历史记录，方便重新查看和回顾。
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* 标题区域 */}
-      <div className="rounded-2xl p-6 mb-8" style={{ backgroundColor: '#F5F5F5' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-normal mb-1" style={{ color: '#000000' }}>历史记录</h2>
-            <p style={{ color: '#999999' }}>共 {histories.length} 条对话</p>
-          </div>
-          <button
-            onClick={onRefresh}
-            className="px-6 py-2 rounded-full border-2 text-base font-normal hover:bg-primary hover:text-white transition-all"
-            style={{ borderColor: '#E0E0E0', color: '#333333' }}
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-10 text-center sm:mb-14">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.32em] text-primary/75">
+          HISTORY
+        </p>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          历史记录
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+          共 {histories.length} 条对话，点击任意一条可以查看完整过程。
+        </p>
+      </div>
+
+      <div className="mb-6 flex items-center justify-between">
+        {onBack && (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="rounded-full px-4 text-card-foreground hover:bg-white/70 hover:text-primary"
           >
-            <RefreshCw className="h-4 w-4 mr-2 inline" />
-            刷新
-          </button>
-        </div>
+            ← 返回
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          onClick={onRefresh}
+          className="ml-auto rounded-full border-border px-5 py-2 text-sm font-normal transition-all hover:bg-primary hover:text-white"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          刷新
+        </Button>
       </div>
 
       <div className="space-y-4">
-        {histories.map((history) => (
-          <div
-            key={history.id}
-            className="p-6 border-2 rounded-3xl cursor-pointer transition-all hover:shadow-md bg-white"
-            style={{ borderColor: '#E0E0E0' }}
-            onClick={() => onSelect(history)}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="font-normal text-lg mb-3" style={{ color: '#000000' }}>{history.topic}</h3>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {history.philosophers.map((phil) => (
-                    <span
-                      key={phil.id}
-                      className="text-xs px-3 py-1 rounded-full font-normal"
-                      style={{ backgroundColor: '#A3B18A', color: '#FFFFFF' }}
-                    >
-                      {phil.avatar} {phil.name}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4 text-sm" style={{ color: '#999999' }}>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {formatDate(history.createdAt)}
+        {histories.map((history) => {
+          const summary = getSummary(history);
+          const philosopherCount = getPhilosopherCount(history);
+          const messageCount = getMessageCount(history);
+
+          return (
+            <article
+              key={history.id}
+              className="group cursor-pointer rounded-[1.75rem] border border-border/80 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glass-md glass shadow-glass sm:p-6"
+              onClick={() => onSelect(history)}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-semibold leading-7 text-foreground sm:text-xl">
+                    {history.topic}
+                  </h3>
+
+                  {summary && (
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-subtle">
+                      {summary}
+                    </p>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-subtle">
+                    <span>{philosopherCount} 位哲学家</span>
+                    <span>·</span>
+                    <span>{messageCount} 条发言</span>
+                    <span>·</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatDate(history.createdAt)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    {history.messages.filter(m => m.phase !== 'narrator').length} 条讨论
-                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  aria-label={`删除"${history.topic}"的历史记录`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(history.id);
+                  }}
+                  className="self-end rounded-full p-2 text-subtle transition-colors hover:bg-red-50 hover:text-red-500 sm:self-start"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(history.id);
-                }}
-                className="p-2 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-                style={{ color: '#999999' }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

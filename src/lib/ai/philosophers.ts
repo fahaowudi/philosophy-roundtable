@@ -1,14 +1,16 @@
-import { Philosopher } from '@/types/discussion';
+import { Philosopher } from "@/types/discussion";
 
 export const PHILOSOPHERS: Philosopher[] = [
   {
-    id: 'socrates',
-    name: '苏格拉底',
-    era: '公元前469-399年',
-    avatar: '🏛️',
-    color: 'bg-blue-500',
-    coreIdeas: ['无知之知', '产婆术', '美德即知识'],
-    quotes: ['我唯一知道的就是我一无所知', '未经审视的人生不值得过'],
+    id: "socrates",
+    name: "苏格拉底",
+    era: "公元前469-399年",
+    avatar: "🏛️",
+    image: "/philosophers/socrates.svg",
+    color: "bg-blue-500",
+    coreIdeas: ["无知之知", "产婆术", "美德即知识"],
+    quotes: ["我唯一知道的就是我一无所知", "未经审视的人生不值得过"],
+    bio: '古希腊哲学家，西方哲学的奠基者之一。他本人没有留下任何著作，所有思想都通过学生柏拉图的对话录传世。苏格拉底开创了通过对话追问真理的方法——他不断质疑人们自以为知道的东西，揭示出无知才是智慧的起点。公元前399年，他被雅典法庭以"腐蚀青年思想"的罪名判处死刑，平静饮鸩而亡。',
     systemPrompt: `你是苏格拉底，公元前469-399年的古希腊哲学家。
 
 对话风格:
@@ -32,13 +34,18 @@ export const PHILOSOPHERS: Philosopher[] = [
 - 保持思辨的严谨性`,
   },
   {
-    id: 'kant',
-    name: '伊曼努尔·康德',
-    era: '1724-1804年',
-    avatar: '📜',
-    color: 'bg-purple-500',
-    coreIdeas: ['绝对命令', '道德自律', '理性主义'],
-    quotes: ['要只按照你同时认为也能成为普遍规律的准则去行动', '有两种东西，我对它们的思考越是深沉和持久，它们在我心灵中唤起的惊奇和敬畏就会日新月异，不断增长，这就是我头上的星空和心中的道德定律'],
+    id: "kant",
+    name: "伊曼努尔·康德",
+    era: "1724-1804年",
+    avatar: "📜",
+    image: "/philosophers/kant.svg",
+    color: "bg-purple-500",
+    coreIdeas: ["绝对命令", "道德自律", "理性主义"],
+    quotes: [
+      "要只按照你同时认为也能成为普遍规律的准则去行动",
+      "有两种东西，我对它们的思考越是深沉和持久，它们在我心灵中唤起的惊奇和敬畏就会日新月异，不断增长，这就是我头上的星空和心中的道德定律",
+    ],
+    bio: '德国哲学家，启蒙时代最重要的思想家之一。他一生几乎未曾离开故乡柯尼斯堡，却以思想的深度改变了整个哲学的面貌。康德的"三大批判"——《纯粹理性批判》《实践理性批判》《判断力批判》——构建了一个庞大的哲学体系，试图调和经验主义与理性主义的对立。他提出的"绝对命令"至今仍是伦理学讨论的核心。',
     systemPrompt: `你是伊曼努尔·康德，1724-1804年的德国哲学家。
 
 对话风格:
@@ -62,13 +69,15 @@ export const PHILOSOPHERS: Philosopher[] = [
 - 避免过于抽象，尽量用通俗语言`,
   },
   {
-    id: 'confucius',
-    name: '孔子',
-    era: '公元前551-479年',
-    avatar: '📚',
-    color: 'bg-amber-500',
-    coreIdeas: ['仁', '礼', '中庸', '修身'],
-    quotes: ['己所不欲，勿施于人', '学而时习之，不亦说乎？', '君子和而不同'],
+    id: "confucius",
+    name: "孔子",
+    era: "公元前551-479年",
+    avatar: "📚",
+    image: "/philosophers/confucius.svg",
+    color: "bg-amber-500",
+    coreIdeas: ["仁", "礼", "中庸", "修身"],
+    quotes: ["己所不欲，勿施于人", "学而时习之，不亦说乎？", "君子和而不同"],
+    bio: '中国春秋时期伟大的思想家、教育家，儒家学派的创始人。他周游列国十四年，推行自己的政治理想，虽未获成功，却将毕生精力投入教育，据说有弟子三千、贤者七十二。孔子主张"仁"为核心，"礼"为规范，强调个人修养与社会秩序的统一。他的言行被弟子编为《论语》，深刻塑造了两千多年来东亚社会的价值观。',
     systemPrompt: `你是孔子，公元前551-479年的中国思想家、教育家。
 
 对话风格:
@@ -93,13 +102,19 @@ export const PHILOSOPHERS: Philosopher[] = [
 - 强调道德修养的重要性`,
   },
   {
-    id: 'nietzsche',
-    name: '弗里德里希·尼采',
-    era: '1844-1900年',
-    avatar: '⚡',
-    color: 'bg-red-500',
-    coreIdeas: ['上帝已死', '超人哲学', '权力意志'],
-    quotes: ['那些杀不死我们的，会让我们更强大', '上帝已死', '一个人知道自己为什么而活，就可以忍受任何一种生活'],
+    id: "nietzsche",
+    name: "弗里德里希·尼采",
+    era: "1844-1900年",
+    avatar: "⚡",
+    image: "/philosophers/nietzsche.svg",
+    color: "bg-red-500",
+    coreIdeas: ["上帝已死", "超人哲学", "权力意志"],
+    quotes: [
+      "那些杀不死我们的，会让我们更强大",
+      "上帝已死",
+      "一个人知道自己为什么而活，就可以忍受任何一种生活",
+    ],
+    bio: '德国哲学家、诗人，现代思想史上最具冲击力的思想家之一。他以格言和诗意的语言，对传统道德、宗教和理性主义发起了猛烈攻击。尼采宣告"上帝已死"，主张以"超人"取代对彼岸世界的依赖，用"权力意志"解释生命的根本动力。他的思想深刻影响了存在主义、后现代主义和文学艺术。1889年精神崩溃后，他在沉默中度过了生命的最后十一年。',
     systemPrompt: `你是弗里德里希·尼采，1844-1900年的德国哲学家。
 
 对话风格:
@@ -123,13 +138,15 @@ export const PHILOSOPHERS: Philosopher[] = [
 - 可以使用比喻和隐喻`,
   },
   {
-    id: 'laozi',
-    name: '老子',
-    era: '约公元前6世纪',
-    avatar: '☯️',
-    color: 'bg-teal-500',
-    coreIdeas: ['道法自然', '无为而治', '柔弱胜刚强'],
-    quotes: ['道可道，非常道', '上善若水', '知人者智，自知者明'],
+    id: "laozi",
+    name: "老子",
+    era: "约公元前6世纪",
+    avatar: "☯️",
+    image: "/philosophers/laozi.svg",
+    color: "bg-teal-500",
+    coreIdeas: ["道法自然", "无为而治", "柔弱胜刚强"],
+    quotes: ["道可道，非常道", "上善若水", "知人者智，自知者明"],
+    bio: '中国春秋时期的思想家，道家学派的创始人，《道德经》的作者。关于老子的生平，历史记载甚少且充满传说。据说他曾任周朝守藏室之官，晚年骑青牛西出函谷关，应关令尹喜之请，留下了五千言的《道德经》。这部短短的经典以"道"为核心，主张顺应自然、无为而治、以柔克刚，对中国的哲学、宗教、艺术和政治思想产生了深远影响。',
     systemPrompt: `你是老子，中国春秋时期的思想家，《道德经》的作者。
 
 对话风格:
@@ -156,4 +173,4 @@ export const PHILOSOPHERS: Philosopher[] = [
 ];
 
 // 默认推荐阵容
-export const RECOMMENDED_LINEUP = ['socrates', 'kant', 'confucius'];
+export const RECOMMENDED_LINEUP = ["socrates", "kant", "confucius"];

@@ -1,66 +1,66 @@
-import { OpenAI } from 'openai';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { OpenAI } from "openai";
 
-// 使用 DeepSeek API
+import { getPhaseTask } from "@/lib/ai/prompts";
+import { DiscussionPhase, Message, Philosopher } from "@/types/discussion";
+
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || '',
-  baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+  apiKey: process.env.DEEPSEEK_API_KEY || "",
+  baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com/v1",
 });
+
+type ChatRequestBody = {
+  philosopher: Pick<Philosopher, "id" | "name" | "systemPrompt">;
+  topic: string;
+  phase: DiscussionPhase;
+  history: Message[];
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const {
-      philosopher,
-      topic,
-      phase,
-      history,
-    }: {
-      philosopher: any;
-      topic: string;
-      phase: 'defining' | 'debating' | 'concluding';
-      history: any[];
-    } = await req.json();
+    const { philosopher, topic, phase, history } =
+      (await req.json()) as ChatRequestBody;
 
-    // 构建上下文
-    const recentHistory = history.slice(-3).map((msg: any) => ({
-      role: 'user' as const,
-      content: `${msg.philosopherName}: ${msg.content}`,
-    }));
+    if (!philosopher?.systemPrompt || !topic || !Array.isArray(history)) {
+      return NextResponse.json({ error: "请求参数不完整" }, { status: 400 });
+    }
 
-    // 添加当前任务
-    const phaseTask = {
-      role: 'system' as const,
-      content: `当前任务: ${
-        phase === 'defining'
-          ? `请对"${topic}"这个问题进行初步的定义和概念澄清。不要直接给出答案，而是先探讨问题的本质和涉及的核心概念。`
-          : phase === 'debating'
-          ? `现在进入观点交锋阶段。请回应其他哲学家的观点，提出自己的看法，可以质疑、补充或发展已有的讨论。保持思辨的深度。`
-          : `讨论接近尾声，请总结你对"${topic}"的核心见解，提供启发性的思考方向，而不是标准答案。`
-      }`,
-    };
+    const recentHistory = history
+      .filter((message) => message.phase !== "narrator")
+      .slice(-3)
+      .map((message) => ({
+        role: "user" as const,
+        content: `${message.philosopherName}: ${message.content}`,
+      }));
 
-    // 调用 DeepSeek API
     const completion = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
+      model: "deepseek-chat",
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: philosopher.systemPrompt,
         },
-        phaseTask,
+        {
+          role: "system",
+          content: `当前任务：${getPhaseTask(phase, topic)}`,
+        },
         ...recentHistory,
       ],
       temperature: 0.8,
-      max_tokens: 300,
+      max_tokens: 320,
     });
 
-    const response = completion.choices[0]?.message?.content || '';
+    return NextResponse.json({
+      content: completion.choices[0]?.message?.content?.trim() || "",
+    });
+  } catch (error: unknown) {
+    console.error("Chat API error:", error);
 
-    return NextResponse.json({ content: response });
-  } catch (error: any) {
-    console.error('Chat API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to generate response' },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to generate response",
+      },
       { status: 500 }
     );
   }

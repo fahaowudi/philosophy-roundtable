@@ -1,74 +1,118 @@
-import { DiscussionHistory } from '@/types/history';
+import { Message } from "@/types/discussion";
+import { DiscussionHistory } from "@/types/history";
 
-const STORAGE_KEY = 'philosophy-discussions';
+const STORAGE_KEY = "philosophy-discussions";
+
+type StoredMessage = Omit<Message, "timestamp"> & {
+  timestamp: string;
+};
+
+type StoredDiscussionHistory = Omit<DiscussionHistory, "createdAt" | "messages"> & {
+  createdAt: string;
+  messages: StoredMessage[];
+};
+
+function hasStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function hydrateMessage(message: StoredMessage): Message {
+  return {
+    ...message,
+    timestamp: new Date(message.timestamp),
+  };
+}
+
+function hydrateHistory(history: StoredDiscussionHistory): DiscussionHistory {
+  return {
+    ...history,
+    createdAt: new Date(history.createdAt),
+    messages: Array.isArray(history.messages)
+      ? history.messages.map(hydrateMessage)
+      : [],
+  };
+}
 
 export const discussionStorage = {
-  // 保存对话记录
-  save: (discussion: DiscussionHistory) => {
+  save(discussion: DiscussionHistory) {
     try {
+      if (!hasStorage()) {
+        return false;
+      }
+
       const histories = discussionStorage.getAll();
-      histories.unshift(discussion); // 最新的在前面
+      histories.unshift(discussion);
 
-      // 只保留最近 20 条
-      const trimmedHistories = histories.slice(0, 20);
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedHistories));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(histories.slice(0, 20)));
       return true;
     } catch (error) {
-      console.error('保存对话失败:', error);
+      console.error("保存对话失败:", error);
       return false;
     }
   },
 
-  // 获取所有对话记录
-  getAll: (): DiscussionHistory[] => {
+  getAll(): DiscussionHistory[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (!data) return [];
+      if (!hasStorage()) {
+        return [];
+      }
 
-      const histories = JSON.parse(data);
-      // 将日期字符串转换回Date对象
-      return histories.map((h: any) => ({
-        ...h,
-        createdAt: new Date(h.createdAt),
-      }));
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        return [];
+      }
+
+      const histories = JSON.parse(data) as StoredDiscussionHistory[];
+
+      if (!Array.isArray(histories)) {
+        return [];
+      }
+
+      return histories.map(hydrateHistory);
     } catch (error) {
-      console.error('读取对话失败:', error);
+      console.error("读取对话失败:", error);
       return [];
     }
   },
 
-  // 根据ID获取对话
-  getById: (id: string): DiscussionHistory | null => {
+  getById(id: string): DiscussionHistory | null {
     try {
-      const histories = discussionStorage.getAll();
-      return histories.find(h => h.id === id) || null;
+      return discussionStorage.getAll().find((history) => history.id === id) ?? null;
     } catch (error) {
-      console.error('读取对话失败:', error);
+      console.error("读取对话失败:", error);
       return null;
     }
   },
 
-  // 删除对话
-  delete: (id: string) => {
+  delete(id: string) {
     try {
-      const histories = discussionStorage.getAll();
-      const filtered = histories.filter(h => h.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      if (!hasStorage()) {
+        return false;
+      }
+
+      const filteredHistories = discussionStorage
+        .getAll()
+        .filter((history) => history.id !== id);
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredHistories));
       return true;
     } catch (error) {
-      console.error('删除对话失败:', error);
+      console.error("删除对话失败:", error);
       return false;
     }
   },
 
-  // 清空所有记录
-  clear: () => {
+  clear() {
     try {
+      if (!hasStorage()) {
+        return false;
+      }
+
       localStorage.removeItem(STORAGE_KEY);
       return true;
     } catch (error) {
-      console.error('清空对话失败:', error);
+      console.error("清空对话失败:", error);
       return false;
     }
   },

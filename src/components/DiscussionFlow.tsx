@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Philosopher, Message, DiscussionPhase } from '@/types/discussion';
-import { DiscussionHistory } from '@/types/history';
-import { DialogueBubble } from './DialogueBubble';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Pause, Play, RotateCcw, Loader2, Save, Home } from 'lucide-react';
-import { useMessageSound } from '@/hooks/useMessageSound';
-import { discussionStorage } from '@/lib/storage';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Home, Pause, Play, RotateCcw, Save } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMessageSound } from "@/hooks/useMessageSound";
+import { discussionStorage } from "@/lib/storage";
+import { DiscussionPhase, Message, Philosopher } from "@/types/discussion";
+import { DiscussionHistory } from "@/types/history";
+import { ContinuePrompt } from "./ContinuePrompt";
+import { DialogueBubble } from "./DialogueBubble";
+import { PhaseIndicator } from "./PhaseIndicator";
 
 interface DiscussionFlowProps {
   topic: string;
@@ -26,41 +29,129 @@ export function DiscussionFlow({
 }: DiscussionFlowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [currentPhase, setCurrentPhase] = useState<DiscussionPhase>('defining');
+  const [currentPhase, setCurrentPhase] = useState<DiscussionPhase>("defining");
   const [currentPhilosopherIndex, setCurrentPhilosopherIndex] = useState(0);
   const [round, setRound] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [waitingReason, setWaitingReason] = useState<
+    "narrator" | "phaseTransition" | null
+  >(null);
+  const [pendingPhase, setPendingPhase] = useState<DiscussionPhase | null>(
+    null
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { playMessageSound } = useMessageSound();
   const MAX_ROUNDS = 6;
+  const waitingForUser = waitingReason !== null;
 
-  // 自动滚动到底部
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, waitingReason, isLoading]);
 
-  // 检查是否需要插入旁白总结
-  const shouldInsertNarrator = (messages: Message[]) => {
-    const nonNarratorMessages = messages.filter((m) => m.phase !== 'narrator');
-    return nonNarratorMessages.length > 0 && nonNarratorMessages.length % 3 === 0;
-  };
+  const shouldInsertNarrator = useCallback(
+    (allMessages: Message[]) => {
+      const nonNarratorMessages = allMessages.filter(
+        (message) => message.phase !== "narrator"
+      );
+      const narratorInterval = Math.max(philosophers.length * 2, 4);
 
-  // 生成下一条消息
-  const generateNextMessage = async () => {
-    if (isLoading) return;
+      return (
+        nonNarratorMessages.length > 0 &&
+        nonNarratorMessages.length % narratorInterval === 0
+      );
+    },
+    [philosophers.length]
+  );
+
+  const getNextPhase = useCallback(
+    (nextRound: number): DiscussionPhase | null => {
+      if (currentPhase === "defining" && nextRound >= 2) {
+        return "debating";
+      }
+
+      if (currentPhase === "debating" && nextRound >= MAX_ROUNDS - 2) {
+        return "concluding";
+      }
+
+      return null;
+    },
+    [currentPhase]
+  );
+
+  const insertNarrator = useCallback(
+    async (currentMessages: Message[]) => {
+      try {
+        const response = await fetch("/api/narrator", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: currentMessages,
+            topic,
+          }),
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { content: string };
+        const narratorMessage: Message = {
+          id: Date.now().toString(),
+          philosopherId: "narrator",
+          philosopherName: "AI 旁白",
+          content: data.content,
+          timestamp: new Date(),
+          phase: "narrator",
+        };
+
+        setMessages((prev) => [...prev, narratorMessage]);
+        playMessageSound();
+      } catch (error) {
+        console.error("Error inserting narrator:", error);
+      }
+    },
+    [playMessageSound, topic]
+  );
+
+  const finalizeDiscussion = useCallback(
+    (finalMessages: Message[]) => {
+      const finalSummary: Message = {
+        id: Date.now().toString(),
+        philosopherId: "narrator",
+        philosopherName: "AI 旁白",
+        content:
+          "讨论已暂时收束。真正重要的不是立刻得出统一答案，而是你已经看见了问题的不同入口、冲突和可能的延伸。",
+        timestamp: new Date(),
+        phase: "narrator",
+      };
+
+      setMessages((prev) => [...prev, finalSummary]);
+      setIsCompleted(true);
+      setIsRunning(false);
+      setWaitingReason(null);
+      setPendingPhase(null);
+      onComplete?.([...finalMessages, finalSummary]);
+    },
+    [onComplete]
+  );
+
+  const generateNextMessage = useCallback(async () => {
+    if (isLoading || philosophers.length === 0) {
+      return;
+    }
 
     const philosopher = philosophers[currentPhilosopherIndex];
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           philosopher,
           topic,
@@ -69,10 +160,11 @@ export function DiscussionFlow({
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate response');
+      if (!response.ok) {
+        throw new Error("Failed to generate response");
+      }
 
-      const data = await response.json();
-
+      const data = (await response.json()) as { content: string };
       const newMessage: Message = {
         id: Date.now().toString(),
         philosopherId: philosopher.id,
@@ -83,73 +175,94 @@ export function DiscussionFlow({
       };
 
       setMessages((prev) => [...prev, newMessage]);
-      // 播放消息提示音
       playMessageSound();
 
-      // 更新哲学家索引
       const nextIndex = (currentPhilosopherIndex + 1) % philosophers.length;
       setCurrentPhilosopherIndex(nextIndex);
 
-      // 如果回到第一个哲学家，增加轮次
-      if (nextIndex === 0) {
-        const newRound = round + 1;
-        setRound(newRound);
+      if (nextIndex !== 0) {
+        return;
+      }
 
-        // 检查是否需要插入旁白
-        if (shouldInsertNarrator([...messages, newMessage])) {
-          await insertNarrator([...messages, newMessage]);
-        }
+      const newRound = round + 1;
+      setRound(newRound);
 
-        // 检查是否进入下一阶段
-        if (newRound >= 2 && currentPhase === 'defining') {
-          setCurrentPhase('debating');
-        } else if (newRound >= MAX_ROUNDS) {
-          await finalizeDiscussion([...messages, newMessage]);
-          setIsRunning(false);
-          return;
-        }
+      const nextMessages = [...messages, newMessage];
+
+      if (newRound >= MAX_ROUNDS) {
+        finalizeDiscussion(nextMessages);
+        return;
+      }
+
+      const nextPhase = getNextPhase(newRound);
+
+      if (shouldInsertNarrator(nextMessages)) {
+        await insertNarrator(nextMessages);
+        setPendingPhase(nextPhase);
+        setWaitingReason("narrator");
+        setIsRunning(false);
+        return;
+      }
+
+      if (nextPhase) {
+        setPendingPhase(nextPhase);
+        setWaitingReason("phaseTransition");
+        setIsRunning(false);
       }
     } catch (error) {
-      console.error('Error generating message:', error);
+      console.error("Error generating message:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentPhase,
+    currentPhilosopherIndex,
+    finalizeDiscussion,
+    getNextPhase,
+    insertNarrator,
+    isLoading,
+    messages,
+    philosophers,
+    playMessageSound,
+    round,
+    shouldInsertNarrator,
+    topic,
+  ]);
 
-  // 插入旁白总结
-  const insertNarrator = async (currentMessages: Message[]) => {
-    try {
-      const response = await fetch('/api/narrator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: currentMessages,
-          topic,
-        }),
-      });
-
-      if (!response.ok) return;
-
-      const data = await response.json();
-
-      const narratorMessage: Message = {
-        id: Date.now().toString(),
-        philosopherId: 'narrator',
-        philosopherName: 'AI 旁白',
-        content: data.content,
-        timestamp: new Date(),
-        phase: 'narrator',
-      };
-
-      setMessages((prev) => [...prev, narratorMessage]);
-      // 旁白消息也播放提示音
-      playMessageSound();
-    } catch (error) {
-      console.error('Error inserting narrator:', error);
+  useEffect(() => {
+    if (
+      !isRunning ||
+      isLoading ||
+      waitingForUser ||
+      isCompleted ||
+      philosophers.length === 0
+    ) {
+      return;
     }
-  };
 
-  // 保存对话
+    const timer = window.setTimeout(() => {
+      void generateNextMessage();
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    generateNextMessage,
+    isCompleted,
+    isLoading,
+    isRunning,
+    philosophers.length,
+    waitingForUser,
+  ]);
+
+  useEffect(() => {
+    if (!isSaved) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setIsSaved(false), 3000);
+    return () => window.clearTimeout(timer);
+  }, [isSaved]);
+
   const saveDiscussion = () => {
     const history: DiscussionHistory = {
       id: Date.now().toString(),
@@ -159,144 +272,161 @@ export function DiscussionFlow({
       createdAt: new Date(),
     };
 
-    const success = discussionStorage.save(history);
-    if (success) {
+    if (discussionStorage.save(history)) {
       setIsSaved(true);
-      // 3秒后重置保存状态
-      setTimeout(() => setIsSaved(false), 3000);
     }
   };
 
-  // 完成讨论
-  const finalizeDiscussion = async (finalMessages: Message[]) => {
-    const finalSummary: Message = {
-      id: Date.now().toString(),
-      philosopherId: 'narrator',
-      philosopherName: 'AI 旁白',
-      content: `讨论已结束。这是一个开放性的哲学问题，每位哲学家都从不同的角度给出了见解。希望这场圆桌讨论能够激发你更深层次的思考。`,
-      timestamp: new Date(),
-      phase: 'narrator',
-    };
+  const handleUserContinue = () => {
+    if (pendingPhase) {
+      setCurrentPhase(pendingPhase);
+    }
 
-    setMessages((prev) => [...prev, finalSummary]);
-    setIsCompleted(true);
-    onComplete?.([...finalMessages, finalSummary]);
+    setPendingPhase(null);
+    setWaitingReason(null);
+    setIsRunning(true);
   };
 
-  // 开始/暂停讨论
   const toggleDiscussion = () => {
-    if (isRunning) {
-      setIsRunning(false);
-    } else {
-      setIsRunning(true);
+    if (waitingForUser) {
+      return;
     }
+
+    setIsRunning((prev) => !prev);
   };
 
-  // 重新开始
   const resetDiscussion = () => {
     setMessages([]);
     setIsRunning(false);
-    setCurrentPhase('defining');
+    setCurrentPhase("defining");
     setCurrentPhilosopherIndex(0);
     setRound(0);
+    setWaitingReason(null);
+    setPendingPhase(null);
+    setIsCompleted(false);
+    setIsSaved(false);
   };
 
-  // 自动生成下一条消息
-  useEffect(() => {
-    if (isRunning && !isLoading && messages.length < MAX_ROUNDS * philosophers.length + 10) {
-      const timer = setTimeout(() => {
-        generateNextMessage();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isRunning, currentPhilosopherIndex, messages, isLoading]);
-
   return (
-    <div className="flex flex-col h-full">
-      {/* 控制栏 */}
-      <div className="p-6 mb-6 border-2 rounded-3xl bg-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-normal text-2xl mb-2" style={{ color: '#000000' }}>{topic}</h2>
-            <p className="text-base" style={{ color: '#666666' }}>
-              {currentPhase === 'defining' && '定义问题阶段'}
-              {currentPhase === 'debating' && '观点交锋阶段'}
-              {currentPhase === 'concluding' && '总结阶段'}
-              {' · '}第 {round + 1} 轮
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-6 rounded-[2rem] border border-white/40 p-5 glass-strong shadow-glass sm:p-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">
+              Active Discussion
             </p>
+            <h2 className="mb-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              {topic}
+            </h2>
+            <PhaseIndicator
+              phase={currentPhase}
+              round={round}
+              maxRounds={MAX_ROUNDS}
+            />
           </div>
-          <div className="flex gap-3">
+
+          <div className="flex shrink-0 flex-wrap gap-3 lg:justify-end">
             {isCompleted && (
-              <button
+              <Button
+                variant="outline"
                 onClick={saveDiscussion}
                 disabled={isSaved}
-                className="px-6 py-3 rounded-full border-2 text-base font-normal hover:bg-primary hover:text-white transition-all disabled:opacity-50"
-                style={{ borderColor: '#E0E0E0', color: '#333333' }}
+                className="rounded-full"
               >
-                <Save className="h-4 w-4 mr-2 inline" />
-                {isSaved ? '已保存' : '保存对话'}
-              </button>
+                <Save className="mr-2 h-4 w-4" />
+                {isSaved ? "已保存" : "保存对话"}
+              </Button>
             )}
             {isCompleted && onGoHome && (
-              <button
+              <Button
+                variant="outline"
                 onClick={onGoHome}
-                className="px-6 py-3 rounded-full border-2 text-base font-normal hover:bg-primary hover:text-white transition-all"
-                style={{ borderColor: '#E0E0E0', color: '#333333' }}
+                className="rounded-full"
               >
-                <Home className="h-4 w-4 mr-2 inline" />
+                <Home className="mr-2 h-4 w-4" />
                 返回主页
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="outline"
               onClick={resetDiscussion}
               disabled={messages.length === 0}
-              className="px-6 py-3 rounded-full border-2 text-base font-normal hover:bg-primary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ borderColor: '#E0E0E0', color: '#333333' }}
+              className="rounded-full"
             >
-              <RotateCcw className="h-4 w-4 mr-2 inline" />
+              <RotateCcw className="mr-2 h-4 w-4" />
               重新开始
-            </button>
+            </Button>
             {!isCompleted && (
-              <button
+              <Button
                 onClick={toggleDiscussion}
-                disabled={isLoading || messages.length >= MAX_ROUNDS * philosophers.length}
-                className="px-8 py-3 rounded-full text-base font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#2D5A3A', color: '#FFFFFF' }}
+                disabled={
+                  isLoading ||
+                  waitingForUser ||
+                  messages.length >= MAX_ROUNDS * philosophers.length
+                }
+                className="rounded-full px-6"
               >
                 {isRunning ? (
                   <>
-                    <Pause className="h-4 w-4 mr-2 inline" />
+                    <Pause className="mr-2 h-4 w-4" />
                     暂停
                   </>
                 ) : (
                   <>
-                    <Play className="h-4 w-4 mr-2 inline" />
-                    {messages.length === 0 ? '开始讨论' : '继续'}
+                    <Play className="mr-2 h-4 w-4" />
+                    {messages.length === 0 ? "开始讨论" : "继续"}
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </div>
         </div>
       </div>
 
-      {/* 对话区域 */}
-      <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-        <div className="space-y-4 pb-4">
-          {messages.length === 0 && (
-            <div className="text-center py-16" style={{ color: '#999999' }}>
-              <p className="text-xl mb-2">点击"开始讨论"开始圆桌会议</p>
-              <p className="text-base">哲学家们将轮流发表见解</p>
+      <ScrollArea className="min-h-0 flex-1" viewportRef={scrollRef}>
+        <div className="space-y-4 pb-6 pr-1">
+          {messages.length === 0 && !isLoading && (
+            <div className="rounded-[2rem] border border-dashed border-border/70 py-16 text-center text-subtle">
+              <p className="mb-2 text-xl font-semibold text-foreground">
+                点击 &ldquo;开始讨论&rdquo; 让圆桌正式开始
+              </p>
+              <p className="mx-auto max-w-xl text-base leading-7">
+                哲学家们会轮流发言、回应彼此，并在关键节点暂停，方便你跟上讨论推进。
+              </p>
             </div>
           )}
 
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <DialogueBubble key={message.id} message={message} />
           ))}
 
+          <AnimatePresence>
+            {waitingForUser && (
+              <ContinuePrompt
+                reason={waitingReason!}
+                phase={pendingPhase ?? undefined}
+                round={round}
+                onContinue={handleUserContinue}
+              />
+            )}
+          </AnimatePresence>
+
           {isLoading && (
-            <div className="flex items-center gap-2 py-4" style={{ color: '#999999' }}>
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="flex items-center gap-3 py-4 text-muted-foreground">
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="h-2 w-2 rounded-full bg-primary/40"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 0.6,
+                      repeat: Infinity,
+                      delay: index * 0.15,
+                    }}
+                  />
+                ))}
+              </div>
               <span className="text-base">
                 {philosophers[currentPhilosopherIndex].name} 正在思考...
               </span>

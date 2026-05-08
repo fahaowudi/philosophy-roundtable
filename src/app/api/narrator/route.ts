@@ -1,45 +1,49 @@
-import { OpenAI } from 'openai';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { OpenAI } from "openai";
 
-// 使用 DeepSeek API
+import { NARRATOR_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { Message } from "@/types/discussion";
+
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || '',
-  baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+  apiKey: process.env.DEEPSEEK_API_KEY || "",
+  baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com/v1",
 });
+
+type NarratorRequestBody = {
+  messages: Message[];
+  topic: string;
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, topic }: { messages: any[]; topic: string } = await req.json();
+    const { messages, topic } = (await req.json()) as NarratorRequestBody;
 
-    // 构建对话摘要
+    if (!topic || !Array.isArray(messages)) {
+      return NextResponse.json({ error: "请求参数不完整" }, { status: 400 });
+    }
+
     const conversationSummary = messages
+      .filter((message) => message.phase !== "narrator")
       .slice(-6)
-      .map((msg: any) => `${msg.philosopherName}: ${msg.content}`)
-      .join('\n\n');
+      .map((message) => `${message.philosopherName}: ${message.content}`)
+      .join("\n\n");
 
-    const prompt = `你是一位哲学讨论的旁白和总结者。
-
-讨论话题：${topic}
-
-最近的对话：
-${conversationSummary}
-
-请总结哲学家们的核心观点，指出关键的思想碰撞点。语言简洁明了，80字以内。`;
+    const prompt = [
+      `讨论话题：${topic}`,
+      "最近的讨论片段：",
+      conversationSummary || "（暂无讨论内容）",
+      "请总结哲学家们最近的核心分歧、共识或推进点，控制在 80 字以内。",
+    ].join("\n\n");
 
     const completion = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
+      model: "deepseek-chat",
       messages: [
         {
-          role: 'system',
-          content: `你是一位哲学讨论的旁白和总结者。你的任务是：
-- 总结哲学家们的核心观点
-- 指出关键的思想碰撞点
-- 帮助用户理解讨论的进展
-- 语言简洁明了，80字以内
-- 客观中立，不偏袒任何一方`,
+          role: "system",
+          content: NARRATOR_SYSTEM_PROMPT,
         },
         {
-          role: 'user',
+          role: "user",
           content: prompt,
         },
       ],
@@ -47,13 +51,17 @@ ${conversationSummary}
       max_tokens: 200,
     });
 
-    const summary = completion.choices[0]?.message?.content || '';
+    return NextResponse.json({
+      content: completion.choices[0]?.message?.content?.trim() || "",
+    });
+  } catch (error: unknown) {
+    console.error("Narrator API error:", error);
 
-    return NextResponse.json({ content: summary });
-  } catch (error: any) {
-    console.error('Narrator API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to generate summary' },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to generate summary",
+      },
       { status: 500 }
     );
   }
