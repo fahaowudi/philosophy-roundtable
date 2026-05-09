@@ -6,6 +6,7 @@ import { HowItWorks } from "@/components/landing/HowItWorks";
 import { PhilosophersShowcase } from "@/components/landing/PhilosophersShowcase";
 import { TopicsSection } from "@/components/landing/TopicsSection";
 import { Footer } from "@/components/landing/Footer";
+import { UpdateNotice } from "@/components/UpdateNotice";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -15,6 +16,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-dvh font-sans">
+      <UpdateNotice />
       <HeroSection />
       <HowItWorks />
       <PhilosophersShowcase />
