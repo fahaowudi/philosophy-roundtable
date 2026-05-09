@@ -13,6 +13,7 @@ import { DiscussionHistory } from "@/types/history";
 import { ContinuePrompt } from "./ContinuePrompt";
 import { DialogueBubble } from "./DialogueBubble";
 import { PhaseIndicator } from "./PhaseIndicator";
+import { UserInput } from "./UserInput";
 
 interface DiscussionFlowProps {
   topic: string;
@@ -39,8 +40,9 @@ export function DiscussionFlow({
     "narrator" | "phaseTransition" | null
   >(null);
   const [pendingPhase, setPendingPhase] = useState<DiscussionPhase | null>(
-    null
+    null,
   );
+  const [showUserInput, setShowUserInput] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { playMessageSound } = useMessageSound();
@@ -51,12 +53,12 @@ export function DiscussionFlow({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, waitingReason, isLoading]);
+  }, [messages, waitingReason, isLoading, showUserInput]);
 
   const shouldInsertNarrator = useCallback(
     (allMessages: Message[]) => {
       const nonNarratorMessages = allMessages.filter(
-        (message) => message.phase !== "narrator"
+        (message) => message.phase !== "narrator",
       );
       const narratorInterval = Math.max(philosophers.length * 2, 4);
 
@@ -65,7 +67,7 @@ export function DiscussionFlow({
         nonNarratorMessages.length % narratorInterval === 0
       );
     },
-    [philosophers.length]
+    [philosophers.length],
   );
 
   const getNextPhase = useCallback(
@@ -80,7 +82,7 @@ export function DiscussionFlow({
 
       return null;
     },
-    [currentPhase]
+    [currentPhase],
   );
 
   const insertNarrator = useCallback(
@@ -115,7 +117,7 @@ export function DiscussionFlow({
         console.error("Error inserting narrator:", error);
       }
     },
-    [playMessageSound, topic]
+    [playMessageSound, topic],
   );
 
   const finalizeDiscussion = useCallback(
@@ -137,7 +139,7 @@ export function DiscussionFlow({
       setPendingPhase(null);
       onComplete?.([...finalMessages, finalSummary]);
     },
-    [onComplete]
+    [onComplete],
   );
 
   const generateNextMessage = useCallback(async () => {
@@ -208,7 +210,11 @@ export function DiscussionFlow({
         setPendingPhase(nextPhase);
         setWaitingReason("phaseTransition");
         setIsRunning(false);
+        return;
       }
+
+      setShowUserInput(true);
+      setIsRunning(false);
     } catch (error) {
       console.error("Error generating message:", error);
     } finally {
@@ -234,6 +240,7 @@ export function DiscussionFlow({
       !isRunning ||
       isLoading ||
       waitingForUser ||
+      showUserInput ||
       isCompleted ||
       philosophers.length === 0
     ) {
@@ -252,6 +259,7 @@ export function DiscussionFlow({
     isRunning,
     philosophers.length,
     waitingForUser,
+    showUserInput,
   ]);
 
   useEffect(() => {
@@ -284,11 +292,32 @@ export function DiscussionFlow({
 
     setPendingPhase(null);
     setWaitingReason(null);
+    setShowUserInput(true);
+  };
+
+  const handleUserSubmit = (content: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      philosopherId: "user",
+      philosopherName: "你",
+      content,
+      timestamp: new Date(),
+      phase: currentPhase,
+      isUser: true,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setShowUserInput(false);
+    setIsRunning(true);
+  };
+
+  const handleUserSkip = () => {
+    setShowUserInput(false);
     setIsRunning(true);
   };
 
   const toggleDiscussion = () => {
-    if (waitingForUser) {
+    if (waitingForUser || showUserInput) {
       return;
     }
 
@@ -305,6 +334,7 @@ export function DiscussionFlow({
     setPendingPhase(null);
     setIsCompleted(false);
     setIsSaved(false);
+    setShowUserInput(false);
   };
 
   return (
@@ -408,6 +438,12 @@ export function DiscussionFlow({
                 round={round}
                 onContinue={handleUserContinue}
               />
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showUserInput && !isCompleted && (
+              <UserInput onSubmit={handleUserSubmit} onSkip={handleUserSkip} />
             )}
           </AnimatePresence>
 

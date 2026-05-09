@@ -32,20 +32,25 @@ export function generateChatHistory(messages: Message[]): string {
 
   const historyBody = recentMessages
     .map((message) => {
+      const speaker = message.isUser ? "用户" : message.philosopherName;
       const replyPrefix = message.replyToName
         ? `[回应 ${message.replyToName}] `
         : "";
 
-      return `${message.philosopherName}: ${replyPrefix}${message.content}`;
+      return `${speaker}: ${replyPrefix}${message.content}`;
     })
     .join("\n");
 
-  return `最近的讨论：\n${historyBody}`;
+  const hasUserMessage = recentMessages.some((message) => message.isUser);
+
+  return hasUserMessage
+    ? `最近的讨论（用户也参与了，请在回应中适当引用或讨论用户的观点）：\n${historyBody}`
+    : `最近的讨论：\n${historyBody}`;
 }
 
 export function generateReplyDetectionPrompt(
   content: string,
-  history: Message[]
+  history: Message[],
 ): string {
   const historyText = history
     .filter((message) => message.phase !== "narrator")

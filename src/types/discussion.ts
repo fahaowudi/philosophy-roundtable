@@ -19,9 +19,10 @@ export interface Message {
   philosopherName: string;
   content: string;
   timestamp: Date;
-  replyTo?: string; // 回复的消息ID
-  replyToName?: string; // 回复的哲学家名字
+  replyTo?: string;
+  replyToName?: string;
   phase: "defining" | "debating" | "concluding" | "narrator";
+  isUser?: boolean;
 }
 
 // 对话会话

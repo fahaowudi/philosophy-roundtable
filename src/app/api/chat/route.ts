@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
       .slice(-3)
       .map((message) => ({
         role: "user" as const,
-        content: `${message.philosopherName}: ${message.content}`,
+        content: message.isUser
+          ? `用户: ${message.content}`
+          : `${message.philosopherName}: ${message.content}`,
       }));
 
     const completion = await deepseek.chat.completions.create({
@@ -59,9 +61,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Failed to generate response",
+          error instanceof Error
+            ? error.message
+            : "Failed to generate response",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
