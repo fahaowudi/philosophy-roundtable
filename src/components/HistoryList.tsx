@@ -45,30 +45,8 @@ export function HistoryList({
     return date.toLocaleDateString("zh-CN");
   };
 
-  const getSummary = (history: DiscussionHistory): string | null => {
-    const narratorMessages = history.messages.filter(
-      (message) => message.phase === "narrator",
-    );
-    if (narratorMessages.length === 0) return null;
-    const last = narratorMessages[narratorMessages.length - 1].content;
-    return last.length > 100 ? last.slice(0, 100) + "…" : last;
-  };
-
-  const getPhilosopherHighlights = (
-    history: DiscussionHistory,
-  ): { name: string; content: string }[] => {
-    return history.philosophers
-      .map((p) => {
-        const msgs = history.messages.filter(
-          (m) => m.philosopherId === p.id && m.phase !== "narrator",
-        );
-        const last = msgs.length > 0 ? msgs[msgs.length - 1].content : "";
-        return {
-          name: p.name,
-          content: last.length > 40 ? last.slice(0, 40) + "…" : last,
-        };
-      })
-      .filter((h) => h.content);
+  const getPhilosopherNames = (history: DiscussionHistory): string[] => {
+    return history.philosophers.map((p) => p.name);
   };
 
   const getMessageCount = (history: DiscussionHistory) =>
@@ -127,11 +105,9 @@ export function HistoryList({
 
       <div className="space-y-4">
         {histories.map((history) => {
-          const summary = getSummary(history);
           const philosopherCount = getPhilosopherCount(history);
           const messageCount = getMessageCount(history);
-
-          const highlights = getPhilosopherHighlights(history);
+          const names = getPhilosopherNames(history);
 
           return (
             <article
@@ -145,27 +121,18 @@ export function HistoryList({
                     {history.topic}
                   </h3>
 
-                  {/* Philosopher highlights */}
-                  {highlights.length > 0 && (
+                  {/* Philosopher names */}
+                  {names.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {highlights.map((h) => (
+                      {names.map((name) => (
                         <span
-                          key={h.name}
-                          className="inline-flex items-center rounded-full bg-primary/8 px-2.5 py-0.5 text-xs text-primary/80"
+                          key={name}
+                          className="rounded-full bg-primary/8 px-3 py-0.5 text-sm text-primary/80"
                         >
-                          <span className="font-medium">{h.name}</span>
-                          <span className="ml-1 text-muted-foreground">
-                            {h.content}
-                          </span>
+                          {name}
                         </span>
                       ))}
                     </div>
-                  )}
-
-                  {summary && (
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-subtle">
-                      {summary}
-                    </p>
                   )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-subtle">
