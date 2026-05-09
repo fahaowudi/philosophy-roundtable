@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, MessageCircle, Phone, Sparkles, X } from "lucide-react";
+import { MessageCircle, Share2, Sparkles, X } from "lucide-react";
 
-const VERSION = "2026.05";
+const VERSION = "2026.05b";
 const STORAGE_KEY = `update-notice-seen-${VERSION}`;
 
 const updates = [
@@ -19,9 +19,9 @@ const updates = [
     desc: "讨论结束后一键保存，随时回看精彩对话",
   },
   {
-    icon: Mail,
-    title: "更多体验优化",
-    desc: "哲学家头像、UI 细节、性能全面提升",
+    icon: Share2,
+    title: "分享卡片",
+    desc: "AI 提炼讨论精华，生成精美分享图，一键传播",
   },
 ];
 

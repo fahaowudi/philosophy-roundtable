@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import html2canvas from "html2canvas-pro";
 import { QRCodeSVG } from "qrcode.react";
@@ -18,24 +18,41 @@ interface ShareCardProps {
 
 const SITE_URL = "https://philosophy-roundtable.1417541455.workers.dev";
 
-function getPhilosopherHighlight(
-  philosopher: Philosopher,
-  messages: Message[],
-): string {
-  const philosopherMessages = messages.filter(
-    (m) => m.philosopherId === philosopher.id && m.phase !== "narrator",
-  );
-  if (philosopherMessages.length === 0) return "";
-  const last = philosopherMessages[philosopherMessages.length - 1];
-  return last.content.length > 80
-    ? last.content.slice(0, 80) + "…"
-    : last.content;
+interface PhilosopherSummary {
+  id: string;
+  name: string;
+  summary: string;
 }
 
-function getNarratorSummary(messages: Message[]): string {
-  const narratorMessages = messages.filter((m) => m.phase === "narrator");
-  if (narratorMessages.length === 0) return "";
-  return narratorMessages[narratorMessages.length - 1].content;
+interface SummaryData {
+  philosophers: PhilosopherSummary[];
+  conclusion: string;
+}
+
+const COLOR_MAP: Record<string, string> = {
+  "bg-blue-500": "#3b82f6",
+  "bg-purple-500": "#a855f7",
+  "bg-amber-500": "#f59e0b",
+  "bg-red-500": "#ef4444",
+  "bg-teal-500": "#14b8a6",
+};
+
+const COLOR_MAP_LIGHT: Record<string, string> = {
+  "bg-blue-500": "#93c5fd",
+  "bg-purple-500": "#d8b4fe",
+  "bg-amber-500": "#fcd34d",
+  "bg-red-500": "#fca5a5",
+  "bg-teal-500": "#5eead4",
+};
+
+async function captureCard(el: HTMLElement): Promise<HTMLCanvasElement> {
+  return html2canvas(el, {
+    scale: 2,
+    backgroundColor: "#0f0e1a",
+    useCORS: true,
+    allowTaint: false,
+    logging: false,
+  });
 }
 
 export function ShareCard({
@@ -45,25 +62,49 @@ export function ShareCard({
   onClose,
 }: ShareCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSummary() {
+      try {
+        const res = await fetch("/api/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic,
+            messages,
+            philosophers: philosophers.map((p) => ({ id: p.id, name: p.name })),
+          }),
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch summary");
+        const data: SummaryData = await res.json();
+        setSummaryData(data);
+      } catch (err) {
+        console.error("Summary fetch error:", err);
+        setError("总结生成失败，请重试");
+      } finally {
+        setIsLoadingSummary(false);
+      }
+    }
+
+    fetchSummary();
+  }, [topic, messages, philosophers]);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setIsGenerating(true);
-
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
-        backgroundColor: null,
-        useCORS: true,
-      });
-
+      const canvas = await captureCard(cardRef.current);
       const link = document.createElement("a");
       link.download = `哲学圆桌会-${topic.slice(0, 10)}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
-      console.error("Failed to generate share image:", err);
+      console.error("Download failed:", err);
     } finally {
       setIsGenerating(false);
     }
@@ -72,14 +113,8 @@ export function ShareCard({
   const handleShare = useCallback(async () => {
     if (!cardRef.current) return;
     setIsGenerating(true);
-
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
-        backgroundColor: null,
-        useCORS: true,
-      });
-
+      const canvas = await captureCard(cardRef.current);
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         try {
@@ -101,12 +136,10 @@ export function ShareCard({
         setIsGenerating(false);
       }, "image/png");
     } catch (err) {
-      console.error("Failed to share:", err);
+      console.error("Share failed:", err);
       setIsGenerating(false);
     }
   }, [topic]);
-
-  const summary = getNarratorSummary(messages);
 
   return (
     <AnimatePresence>
@@ -124,86 +157,196 @@ export function ShareCard({
           className="flex max-h-[90vh] flex-col items-center gap-4"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Share Card */}
           <div
             ref={cardRef}
-            className="w-[380px] overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-7 text-white shadow-2xl"
+            className="w-[400px] overflow-hidden rounded-3xl p-6"
+            style={{
+              background:
+                "linear-gradient(135deg, #0f0e1a 0%, #1a1a2e 40%, #16213e 100%)",
+            }}
           >
             {/* Header */}
-            <div className="mb-5 text-center">
-              <p className="mb-1 text-xs tracking-[0.2em] text-indigo-300/70">
-                PHILOSOPHY ROUNDTABLE
+            <div className="mb-4 text-center">
+              <p
+                className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em]"
+                style={{ color: "#93c5fd" }}
+              >
+                Philosophy Roundtable
               </p>
-              <h1 className="text-2xl font-bold tracking-tight">哲学圆桌会</h1>
+              <h1 className="text-xl font-bold" style={{ color: "#f1f5f9" }}>
+                哲学圆桌会
+              </h1>
             </div>
 
             {/* Topic */}
-            <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center">
-              <p className="text-xs text-indigo-300/70">本期话题</p>
-              <p className="mt-1 text-base font-semibold leading-relaxed">
+            <div
+              className="mb-4 rounded-2xl border px-4 py-3 text-center"
+              style={{
+                borderColor: "rgba(255,255,255,0.15)",
+                background: "rgba(255,255,255,0.05)",
+              }}
+            >
+              <p className="text-[11px]" style={{ color: "#93c5fd" }}>
+                本期话题
+              </p>
+              <p
+                className="mt-1 text-[15px] font-semibold leading-relaxed"
+                style={{ color: "#e2e8f0" }}
+              >
                 {topic}
               </p>
             </div>
 
-            {/* Philosophers */}
-            <div className="mb-5">
-              <div className="flex justify-center gap-3">
-                {philosophers.map((p) => (
+            {/* Philosopher Avatars Row */}
+            <div className="mb-4 flex justify-center gap-4">
+              {philosophers.map((p) => (
+                <div key={p.id} className="flex flex-col items-center gap-1.5">
                   <div
-                    key={p.id}
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full"
+                    style={{
+                      border: `2px solid ${COLOR_MAP[p.color] || "#3b82f6"}`,
+                      background: "rgba(255,255,255,0.08)",
+                    }}
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl">
-                      {p.avatar}
-                    </div>
-                    <span className="text-xs text-white/70">{p.name}</span>
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="h-full w-full object-cover"
+                      crossOrigin="anonymous"
+                    />
                   </div>
-                ))}
-              </div>
+                  <span
+                    className="text-[11px] font-medium"
+                    style={{ color: COLOR_MAP_LIGHT[p.color] || "#93c5fd" }}
+                  >
+                    {p.name}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            {/* Highlights */}
-            <div className="mb-5 space-y-2.5">
-              {philosophers.map((p) => {
-                const highlight = getPhilosopherHighlight(p, messages);
-                if (!highlight) return null;
-                return (
-                  <div
-                    key={p.id}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5"
-                  >
-                    <span className="text-xs font-semibold text-indigo-300">
-                      {p.name}
-                    </span>
-                    <p className="mt-0.5 text-sm leading-relaxed text-white/85">
-                      {highlight}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Summary */}
-            {summary && (
-              <div className="mb-5 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-3 text-center">
-                <p className="text-xs text-indigo-300/70">讨论总结</p>
-                <p className="mt-1 text-sm leading-relaxed text-white/90">
-                  {summary}
+            {/* AI Summary Content */}
+            {isLoadingSummary ? (
+              <div className="mb-4 flex flex-col items-center gap-2 py-6">
+                <Loader2
+                  className="h-6 w-6 animate-spin"
+                  style={{ color: "#93c5fd" }}
+                />
+                <p className="text-xs" style={{ color: "#94a3b8" }}>
+                  正在提炼对话精华...
                 </p>
               </div>
+            ) : error ? (
+              <div className="mb-4 py-4 text-center">
+                <p className="text-xs" style={{ color: "#fca5a5" }}>
+                  {error}
+                </p>
+              </div>
+            ) : (
+              summaryData && (
+                <>
+                  {/* Philosopher Summaries */}
+                  <div className="mb-3 space-y-2">
+                    {summaryData.philosophers.map((ps, i) => {
+                      const p = philosophers.find((ph) => ph.id === ps.id);
+                      const color =
+                        COLOR_MAP[p?.color || "bg-blue-500"] || "#3b82f6";
+                      const lightColor =
+                        COLOR_MAP_LIGHT[p?.color || "bg-blue-500"] || "#93c5fd";
+                      return (
+                        <div
+                          key={ps.id}
+                          className="rounded-xl border px-3.5 py-2.5"
+                          style={{
+                            borderColor: `${color}33`,
+                            background: `${color}0d`,
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full"
+                              style={{ border: `1.5px solid ${color}` }}
+                            >
+                              {p && (
+                                <img
+                                  src={p.image}
+                                  alt={p.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <span
+                              className="text-[11px] font-semibold"
+                              style={{ color: lightColor }}
+                            >
+                              {ps.name}
+                            </span>
+                          </div>
+                          <p
+                            className="mt-1.5 text-[12.5px] leading-relaxed"
+                            style={{ color: "rgba(226,232,240,0.9)" }}
+                          >
+                            {ps.summary}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Conclusion */}
+                  {summaryData.conclusion && (
+                    <div
+                      className="mb-4 rounded-xl border px-4 py-3 text-center"
+                      style={{
+                        borderColor: "rgba(147,197,253,0.2)",
+                        background: "rgba(147,197,253,0.06)",
+                      }}
+                    >
+                      <p
+                        className="text-[11px] font-medium"
+                        style={{ color: "#93c5fd" }}
+                      >
+                        讨论总结
+                      </p>
+                      <p
+                        className="mt-1 text-[12.5px] leading-relaxed"
+                        style={{ color: "rgba(226,232,240,0.9)" }}
+                      >
+                        {summaryData.conclusion}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )
             )}
 
-            {/* Footer with URL + QR */}
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            {/* Footer: URL + QR */}
+            <div
+              className="flex items-center justify-between rounded-xl border px-4 py-3"
+              style={{
+                borderColor: "rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
               <div>
-                <p className="text-xs font-semibold text-indigo-300">
+                <p
+                  className="text-[11px] font-semibold"
+                  style={{ color: "#93c5fd" }}
+                >
                   扫码体验哲学对话
                 </p>
-                <p className="mt-0.5 text-xs text-white/50">{SITE_URL}</p>
+                <p
+                  className="mt-0.5 text-[10px]"
+                  style={{ color: "rgba(148,163,184,0.6)" }}
+                >
+                  {SITE_URL}
+                </p>
               </div>
               <div className="rounded-lg bg-white p-1">
                 <QRCodeSVG
                   value={SITE_URL}
-                  size={56}
+                  size={52}
                   bgColor="#ffffff"
                   fgColor="#1e1b4b"
                   level="M"
@@ -212,7 +355,7 @@ export function ShareCard({
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -224,7 +367,7 @@ export function ShareCard({
             </Button>
             <Button
               onClick={handleDownload}
-              disabled={isGenerating}
+              disabled={isGenerating || isLoadingSummary}
               className="rounded-full bg-indigo-600 text-white hover:bg-indigo-500"
             >
               {isGenerating ? (
@@ -236,7 +379,7 @@ export function ShareCard({
             </Button>
             <Button
               onClick={handleShare}
-              disabled={isGenerating}
+              disabled={isGenerating || isLoadingSummary}
               className="rounded-full bg-indigo-500 text-white hover:bg-indigo-400"
             >
               <Share2 className="mr-1.5 h-4 w-4" />

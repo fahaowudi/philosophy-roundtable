@@ -55,7 +55,7 @@ export function DiscussionFlow({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, waitingReason, isLoading, showUserInput]);
+  }, [messages, waitingReason, isLoading, showUserInput, isCompleted]);
 
   const shouldInsertNarrator = useCallback(
     (allMessages: Message[]) => {
@@ -359,36 +359,6 @@ export function DiscussionFlow({
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-3 lg:justify-end">
-            {isCompleted && (
-              <Button
-                onClick={() => setShowShareCard(true)}
-                className="rounded-full px-6"
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                生成分享图
-              </Button>
-            )}
-            {isCompleted && (
-              <Button
-                variant="outline"
-                onClick={saveDiscussion}
-                disabled={isSaved}
-                className="rounded-full"
-              >
-                <Save className="mr-2 h-4 w-4" />
-                {isSaved ? "已保存" : "保存对话"}
-              </Button>
-            )}
-            {isCompleted && onGoHome && (
-              <Button
-                variant="outline"
-                onClick={onGoHome}
-                className="rounded-full"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                返回主页
-              </Button>
-            )}
             <Button
               variant="outline"
               onClick={resetDiscussion}
@@ -480,6 +450,44 @@ export function DiscussionFlow({
               </span>
             </div>
           )}
+
+          <AnimatePresence>
+            {isCompleted && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                className="flex flex-wrap justify-center gap-3 pt-4"
+              >
+                <Button
+                  onClick={() => setShowShareCard(true)}
+                  className="rounded-full px-6"
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  生成分享图
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={saveDiscussion}
+                  disabled={isSaved}
+                  className="rounded-full"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaved ? "已保存" : "保存对话"}
+                </Button>
+                {onGoHome && (
+                  <Button
+                    variant="outline"
+                    onClick={onGoHome}
+                    className="rounded-full"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    返回主页
+                  </Button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </ScrollArea>
 

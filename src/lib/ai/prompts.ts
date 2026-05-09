@@ -48,6 +48,46 @@ export function generateChatHistory(messages: Message[]): string {
     : `最近的讨论：\n${historyBody}`;
 }
 
+export const SUMMARY_SYSTEM_PROMPT = `你是一位哲学讨论的总结者。你需要为一场哲学圆桌讨论生成精炼的分享摘要。
+
+要求：
+- 为每位参与讨论的哲学家提炼其核心观点（每人 2-3 句话）
+- 每位哲学家的观点概述必须体现其独特的语气和思想风格
+- 最后给出一段整体讨论总结（60 字以内）
+- 严格按 JSON 格式返回，不要返回其他内容`;
+
+export function generateSummaryPrompt(
+  topic: string,
+  messages: Message[],
+  philosophers: { id: string; name: string }[],
+): string {
+  const philosopherNames = philosophers.map((p) => p.name).join("、");
+  const ids = philosophers.map((p) => `"${p.id}"`).join(", ");
+
+  const discussionText = messages
+    .filter((m) => m.phase !== "narrator")
+    .map((m) => {
+      const speaker = m.isUser ? "用户" : m.philosopherName;
+      return `${speaker}: ${m.content}`;
+    })
+    .join("\n");
+
+  return `话题："${topic}"
+参与哲学家：${philosopherNames}
+
+讨论记录：
+${discussionText}
+
+请为每位哲学家概括其在讨论中的核心观点，并给出整体总结。
+严格按以下 JSON 格式返回：
+{
+  "philosophers": [
+    ${philosophers.map((p) => `{"id": "${p.id}", "name": "${p.name}", "summary": "该哲学家核心观点的概括，语气符合人设"}`).join(",\n    ")}
+  ],
+  "conclusion": "整体讨论的精炼总结，60字以内"
+}`;
+}
+
 export function generateReplyDetectionPrompt(
   content: string,
   history: Message[],
