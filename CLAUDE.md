@@ -26,9 +26,12 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 - Prompt 模板: `src/lib/ai/prompts.ts`
 - API 路由: `src/app/api/chat/route.ts`, `src/app/api/narrator/route.ts`, `src/app/api/summary/route.ts`
 - 历史持久化: `src/lib/storage.ts` (localStorage, 20 条上限)
+- 应用状态管理: `src/app/app/AppContent.tsx` (步骤向导)
 - 用户输入: `src/components/UserInput.tsx`
 - 分享卡片: `src/components/ShareCard.tsx` (html2canvas + QR code)
 - 更新公告: `src/components/UpdateNotice.tsx` (localStorage 记录已读)
+- 历史记录: `src/components/HistoryList.tsx`, `src/components/HistoryDetail.tsx`
+- 哲学家介绍: `src/components/PhilosopherIntro.tsx`
 
 ## 部署
 

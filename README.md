@@ -11,6 +11,8 @@
 - 🎯 **启发式输出** - 不是给标准答案，而是激发你思考
 - 📖 **AI 旁白总结** - 每 N 轮对话自动生成总结，帮助理解讨论进展
 - 💾 **对话历史** - 保存讨论记录，支持浏览和回放
+- 🖼️ **分享卡片** - AI 提炼讨论精华，生成精美分享图，一键传播
+- 📢 **版本更新** - 新功能公告弹窗，及时了解最新变化
 
 ## 🚀 快速开始
 
@@ -51,6 +53,8 @@ npm run dev
 - **AI 集成**: DeepSeek API (deepseek-chat)
 - **动画**: Framer Motion
 - **部署**: Cloudflare Pages
+- **截图**: html2canvas-pro
+- **二维码**: qrcode.react
 - **图标**: Lucide React
 
 ## 🏗️ 项目结构
@@ -61,22 +65,32 @@ philosophy-roundtable/
 │   ├── app/                    # Next.js App Router
 │   │   ├── api/               # API 路由
 │   │   │   ├── chat/          # 对话 API
-│   │   │   └── narrator/      # 旁白总结 API
+│   │   │   ├── narrator/      # 旁白总结 API
+│   │   │   └── summary/       # 讨论总结 API (分享卡片)
 │   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   ├── page.tsx           # Landing Page
+│   │   └── app/page.tsx       # 应用入口
 │   ├── components/            # React 组件
 │   │   ├── ui/               # shadcn/ui 基础组件
-│   │   ├── PhilosopherCard.tsx
+│   │   ├── landing/          # 落地页组件 (Hero, Footer)
+│   │   ├── DiscussionFlow.tsx
 │   │   ├── DialogueBubble.tsx
-│   │   ├── TopicInput.tsx
+│   │   ├── UserInput.tsx
+│   │   ├── ShareCard.tsx
+│   │   ├── UpdateNotice.tsx
+│   │   ├── HistoryList.tsx
+│   │   ├── HistoryDetail.tsx
+│   │   ├── PhilosopherIntro.tsx
 │   │   ├── PhilosopherSelector.tsx
-│   │   └── DiscussionFlow.tsx
+│   │   └── TopicInput.tsx
 │   ├── lib/                  # 工具函数和配置
-│   │   └── ai/
-│   │       ├── philosophers.ts  # 哲学家 System Prompts
-│   │       └── prompts.ts      # Prompt 模板
+│   │   ├── ai/
+│   │   │   ├── philosophers.ts  # 哲学家 System Prompts
+│   │   │   └── prompts.ts      # Prompt 模板
+│   │   └── storage.ts          # localStorage 持久化
 │   └── types/                # TypeScript 类型定义
-│       └── discussion.ts
+│       ├── discussion.ts
+│       └── history.ts
 ├── .env.local
 └── package.json
 ```
@@ -118,15 +132,19 @@ vercel --prod
 - [x] 响应式 UI
 - [x] 用户参与讨论功能
 - [x] 对话历史保存
+- [x] AI 分享卡片
+- [x] 哲学家介绍页
+- [x] 版本更新公告
 - [ ] 更多哲学家角色
 - [ ] 语音 TTS 输出
 
-### 近期更新
+### 近期更新 (2026-05)
 
+- AI 分享卡片 — 提炼每位哲学家核心观点，生成精美分享图 + 二维码
+- 历史记录升级 — 卡片展示观点摘要，详情页支持分享
+- 哲学家介绍页 — 了解每位思想家的背景与核心理念
 - 用户参与讨论 — 每轮结束后可以发言，哲学家会回应
-- 分享卡片 — AI 提炼讨论精华，生成精美分享图
 - 版本更新公告 — 首次访问展示新功能
-- 联系开发者 — Footer 展示手机/微信和邮箱
 
 ## 📄 许可证
 
