@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, Pause, Play, RotateCcw, Save } from "lucide-react";
+import { Home, Pause, Play, RotateCcw, Save, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +14,7 @@ import { ContinuePrompt } from "./ContinuePrompt";
 import { DialogueBubble } from "./DialogueBubble";
 import { PhaseIndicator } from "./PhaseIndicator";
 import { UserInput } from "./UserInput";
+import { ShareCard } from "./ShareCard";
 
 interface DiscussionFlowProps {
   topic: string;
@@ -43,6 +44,7 @@ export function DiscussionFlow({
     null,
   );
   const [showUserInput, setShowUserInput] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { playMessageSound } = useMessageSound();
@@ -335,6 +337,7 @@ export function DiscussionFlow({
     setIsCompleted(false);
     setIsSaved(false);
     setShowUserInput(false);
+    setShowShareCard(false);
   };
 
   return (
@@ -356,6 +359,15 @@ export function DiscussionFlow({
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-3 lg:justify-end">
+            {isCompleted && (
+              <Button
+                onClick={() => setShowShareCard(true)}
+                className="rounded-full px-6"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                生成分享图
+              </Button>
+            )}
             {isCompleted && (
               <Button
                 variant="outline"
@@ -470,6 +482,15 @@ export function DiscussionFlow({
           )}
         </div>
       </ScrollArea>
+
+      {showShareCard && (
+        <ShareCard
+          topic={topic}
+          philosophers={philosophers}
+          messages={messages}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
     </div>
   );
 }
