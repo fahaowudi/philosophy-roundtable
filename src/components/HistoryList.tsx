@@ -49,9 +49,26 @@ export function HistoryList({
     const narratorMessages = history.messages.filter(
       (message) => message.phase === "narrator",
     );
-    return narratorMessages.length > 0
-      ? narratorMessages[narratorMessages.length - 1].content
-      : null;
+    if (narratorMessages.length === 0) return null;
+    const last = narratorMessages[narratorMessages.length - 1].content;
+    return last.length > 100 ? last.slice(0, 100) + "…" : last;
+  };
+
+  const getPhilosopherHighlights = (
+    history: DiscussionHistory,
+  ): { name: string; content: string }[] => {
+    return history.philosophers
+      .map((p) => {
+        const msgs = history.messages.filter(
+          (m) => m.philosopherId === p.id && m.phase !== "narrator",
+        );
+        const last = msgs.length > 0 ? msgs[msgs.length - 1].content : "";
+        return {
+          name: p.name,
+          content: last.length > 40 ? last.slice(0, 40) + "…" : last,
+        };
+      })
+      .filter((h) => h.content);
   };
 
   const getMessageCount = (history: DiscussionHistory) =>
@@ -114,6 +131,8 @@ export function HistoryList({
           const philosopherCount = getPhilosopherCount(history);
           const messageCount = getMessageCount(history);
 
+          const highlights = getPhilosopherHighlights(history);
+
           return (
             <article
               key={history.id}
@@ -125,6 +144,23 @@ export function HistoryList({
                   <h3 className="text-lg font-semibold leading-7 text-foreground sm:text-xl">
                     {history.topic}
                   </h3>
+
+                  {/* Philosopher highlights */}
+                  {highlights.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {highlights.map((h) => (
+                        <span
+                          key={h.name}
+                          className="inline-flex items-center rounded-full bg-primary/8 px-2.5 py-0.5 text-xs text-primary/80"
+                        >
+                          <span className="font-medium">{h.name}</span>
+                          <span className="ml-1 text-muted-foreground">
+                            {h.content}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {summary && (
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-subtle">

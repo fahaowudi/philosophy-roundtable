@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Sparkles, X } from "lucide-react";
+import {
+  BookOpen,
+  History,
+  MessageCircle,
+  Share2,
+  Sparkles,
+  X,
+} from "lucide-react";
 
-const VERSION = "2026.05b";
+const VERSION = "2026.05c";
 const STORAGE_KEY = `update-notice-seen-${VERSION}`;
 
 const updates = [
@@ -14,14 +21,19 @@ const updates = [
     desc: "每轮结束后可以发言，哲学家会回应并引用你的观点",
   },
   {
-    icon: Sparkles,
-    title: "对话历史保存",
-    desc: "讨论结束后一键保存，随时回看精彩对话",
+    icon: History,
+    title: "历史记录升级",
+    desc: "卡片展示哲学家观点摘要，详情页可查看完整对话并分享",
   },
   {
     icon: Share2,
-    title: "分享卡片",
-    desc: "AI 提炼讨论精华，生成精美分享图，一键传播",
+    title: "AI 分享卡片",
+    desc: "AI 提炼每位哲学家的核心观点，生成精美分享图传播",
+  },
+  {
+    icon: BookOpen,
+    title: "哲学家介绍页",
+    desc: "全新哲学家详情页，了解每位思想家的背景与核心理念",
   },
 ];
 

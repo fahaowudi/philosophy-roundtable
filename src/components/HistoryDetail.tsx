@@ -1,18 +1,27 @@
 "use client";
 
-import { ArrowLeft, Calendar, Users } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Calendar, Home, Share2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ShareCard } from "@/components/ShareCard";
 import { DiscussionHistory } from "@/types/history";
 import { DialogueBubble } from "./DialogueBubble";
 
 interface HistoryDetailProps {
   history: DiscussionHistory;
   onBack: () => void;
+  onGoHome?: () => void;
 }
 
-export function HistoryDetail({ history, onBack }: HistoryDetailProps) {
+export function HistoryDetail({
+  history,
+  onBack,
+  onGoHome,
+}: HistoryDetailProps) {
+  const [showShareCard, setShowShareCard] = useState(false);
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-6">
       <div className="rounded-[2rem] border border-border/80 p-5 glass-strong shadow-glass sm:p-6">
@@ -34,9 +43,14 @@ export function HistoryDetail({ history, onBack }: HistoryDetailProps) {
               {history.philosophers.map((philosopher) => (
                 <span
                   key={philosopher.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm font-normal text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-normal text-white"
                 >
-                  {philosopher.avatar} {philosopher.name}
+                  <img
+                    src={philosopher.image}
+                    alt={philosopher.name}
+                    className="h-5 w-5 rounded-full object-cover"
+                  />
+                  {philosopher.name}
                 </span>
               ))}
             </div>
@@ -63,8 +77,38 @@ export function HistoryDetail({ history, onBack }: HistoryDetailProps) {
               isAnimating={false}
             />
           ))}
+
+          {/* Action buttons at bottom */}
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
+            <Button
+              onClick={() => setShowShareCard(true)}
+              className="rounded-full px-6"
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              生成分享图
+            </Button>
+            {onGoHome && (
+              <Button
+                variant="outline"
+                onClick={onGoHome}
+                className="rounded-full"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                返回主页
+              </Button>
+            )}
+          </div>
         </div>
       </ScrollArea>
+
+      {showShareCard && (
+        <ShareCard
+          topic={history.topic}
+          philosophers={history.philosophers}
+          messages={history.messages}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
     </div>
   );
 }

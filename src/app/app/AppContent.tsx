@@ -293,7 +293,11 @@ function Home() {
 
         {currentStep === "historyDetail" && selectedHistory && (
           <div className="flex min-h-0 flex-1">
-            <HistoryDetail history={selectedHistory} onBack={handleBack} />
+            <HistoryDetail
+              history={selectedHistory}
+              onBack={handleBack}
+              onGoHome={() => setCurrentStep("home")}
+            />
           </div>
         )}
       </main>

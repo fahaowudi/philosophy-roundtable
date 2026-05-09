@@ -31,6 +31,8 @@ export function DialogueBubble({
       }
     : {};
 
+  const isUserMessage = message.isUser;
+
   if (isNarrator) {
     return (
       <motion.div
@@ -60,15 +62,21 @@ export function DialogueBubble({
       className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4"
     >
       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full sm:h-12 sm:w-12">
-        <Image
-          src={
-            PHILOSOPHERS.find((p) => p.id === message.philosopherId)?.image ??
-            "/philosophers/socrates.png"
-          }
-          alt={message.philosopherName}
-          fill
-          className="object-cover"
-        />
+        {isUserMessage ? (
+          <div className="flex h-full w-full items-center justify-center bg-emerald-500 text-base font-bold text-white sm:text-lg">
+            你
+          </div>
+        ) : (
+          <Image
+            src={
+              PHILOSOPHERS.find((p) => p.id === message.philosopherId)?.image ??
+              "/philosophers/socrates.png"
+            }
+            alt={message.philosopherName}
+            fill
+            className="object-cover"
+          />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">
