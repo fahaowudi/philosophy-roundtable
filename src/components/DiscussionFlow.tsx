@@ -45,6 +45,7 @@ export function DiscussionFlow({
   );
   const [showUserInput, setShowUserInput] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { playMessageSound } = useMessageSound();
@@ -274,8 +275,13 @@ export function DiscussionFlow({
   }, [isSaved]);
 
   const saveDiscussion = () => {
+    if (savedId) {
+      setIsSaved(true);
+      return;
+    }
+    const id = Date.now().toString();
     const history: DiscussionHistory = {
-      id: Date.now().toString(),
+      id,
       topic,
       philosophers,
       messages,
@@ -283,9 +289,37 @@ export function DiscussionFlow({
     };
 
     if (discussionStorage.save(history)) {
+      setSavedId(id);
       setIsSaved(true);
     }
   };
+
+  const openShareCard = () => {
+    if (!savedId) {
+      const id = Date.now().toString();
+      const history: DiscussionHistory = {
+        id,
+        topic,
+        philosophers,
+        messages,
+        createdAt: new Date(),
+      };
+      if (discussionStorage.save(history)) {
+        setSavedId(id);
+        setIsSaved(true);
+      }
+    }
+    setShowShareCard(true);
+  };
+
+  const handleImageGenerated = useCallback(
+    (imageData: string) => {
+      if (savedId) {
+        discussionStorage.saveShareImage(savedId, imageData);
+      }
+    },
+    [savedId],
+  );
 
   const handleUserContinue = () => {
     if (pendingPhase) {
@@ -338,6 +372,7 @@ export function DiscussionFlow({
     setIsSaved(false);
     setShowUserInput(false);
     setShowShareCard(false);
+    setSavedId(null);
   };
 
   return (
@@ -459,10 +494,7 @@ export function DiscussionFlow({
                 exit={{ opacity: 0, y: 12 }}
                 className="flex flex-wrap justify-center gap-3 pt-4"
               >
-                <Button
-                  onClick={() => setShowShareCard(true)}
-                  className="rounded-full px-6"
-                >
+                <Button onClick={openShareCard} className="rounded-full px-6">
                   <Share2 className="mr-2 h-4 w-4" />
                   生成分享图
                 </Button>
@@ -497,6 +529,7 @@ export function DiscussionFlow({
           philosophers={philosophers}
           messages={messages}
           onClose={() => setShowShareCard(false)}
+          onImageGenerated={handleImageGenerated}
         />
       )}
     </div>

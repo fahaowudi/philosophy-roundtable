@@ -14,6 +14,7 @@ interface ShareCardProps {
   philosophers: Philosopher[];
   messages: Message[];
   onClose: () => void;
+  onImageGenerated?: (imageData: string) => void;
 }
 
 const SITE_URL = "https://philosophy-roundtable.1417541455.workers.dev";
@@ -60,6 +61,7 @@ export function ShareCard({
   philosophers,
   messages,
   onClose,
+  onImageGenerated,
 }: ShareCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
@@ -93,6 +95,20 @@ export function ShareCard({
 
     fetchSummary();
   }, [topic, messages, philosophers]);
+
+  useEffect(() => {
+    if (!summaryData || !cardRef.current || !onImageGenerated) return;
+    const timer = setTimeout(async () => {
+      try {
+        const canvas = await captureCard(cardRef.current!);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        onImageGenerated(dataUrl);
+      } catch (err) {
+        console.error("Auto-capture failed:", err);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [summaryData, onImageGenerated]);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;

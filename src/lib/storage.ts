@@ -7,13 +7,18 @@ type StoredMessage = Omit<Message, "timestamp"> & {
   timestamp: string;
 };
 
-type StoredDiscussionHistory = Omit<DiscussionHistory, "createdAt" | "messages"> & {
+type StoredDiscussionHistory = Omit<
+  DiscussionHistory,
+  "createdAt" | "messages"
+> & {
   createdAt: string;
   messages: StoredMessage[];
 };
 
 function hasStorage() {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+  );
 }
 
 function hydrateMessage(message: StoredMessage): Message {
@@ -78,7 +83,9 @@ export const discussionStorage = {
 
   getById(id: string): DiscussionHistory | null {
     try {
-      return discussionStorage.getAll().find((history) => history.id === id) ?? null;
+      return (
+        discussionStorage.getAll().find((history) => history.id === id) ?? null
+      );
     } catch (error) {
       console.error("读取对话失败:", error);
       return null;
@@ -113,6 +120,35 @@ export const discussionStorage = {
       return true;
     } catch (error) {
       console.error("清空对话失败:", error);
+      return false;
+    }
+  },
+
+  saveShareImage(id: string, imageData: string) {
+    try {
+      if (!hasStorage()) return false;
+      localStorage.setItem(`share-image-${id}`, imageData);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  getShareImage(id: string): string | null {
+    try {
+      if (!hasStorage()) return null;
+      return localStorage.getItem(`share-image-${id}`);
+    } catch {
+      return null;
+    }
+  },
+
+  deleteShareImage(id: string) {
+    try {
+      if (!hasStorage()) return false;
+      localStorage.removeItem(`share-image-${id}`);
+      return true;
+    } catch {
       return false;
     }
   },
