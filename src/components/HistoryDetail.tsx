@@ -30,7 +30,7 @@ export function HistoryDetail({
 }: HistoryDetailProps) {
   const [shareImage, setShareImage] = useState<string | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     setShareImage(discussionStorage.getShareImage(history.id));
@@ -58,67 +58,36 @@ export function HistoryDetail({
       <div className="shrink-0 rounded-[2rem] border border-border/80 p-5 glass-strong shadow-glass sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              {history.topic}
-            </h1>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {history.philosophers.map((philosopher) => (
-                <span
-                  key={philosopher.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary/90 px-2.5 py-1 text-xs font-medium text-white"
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                {history.topic}
+              </h1>
+              {shareImage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowImageModal(true)}
+                  className="shrink-0 rounded-full text-xs"
                 >
-                  <img
-                    src={philosopher.image}
-                    alt={philosopher.name}
-                    className="h-4 w-4 rounded-full object-cover"
-                  />
-                  {philosopher.name}
-                </span>
-              ))}
+                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                  查看分享图
+                </Button>
+              )}
             </div>
-          </div>
-
-          <div className="flex shrink-0 flex-col items-end gap-1.5 text-xs text-subtle">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              <span>{history.philosophers.length} 位哲学家</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{history.createdAt.toLocaleString("zh-CN")}</span>
+            <div className="mt-3 flex items-center gap-3 text-xs text-subtle">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                <span>{history.philosophers.length} 位哲学家</span>
+              </div>
+              <span>·</span>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{history.createdAt.toLocaleString("zh-CN")}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Share image preview or generate button */}
-      {shareImage && !showFullImage && (
-        <div className="shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowFullImage(true)}
-            className="group relative mx-auto block w-full max-w-sm overflow-hidden rounded-2xl border border-white/30 shadow-glass transition-all hover:shadow-glass-md"
-          >
-            <img src={shareImage} alt="分享图" className="w-full" />
-            <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/40 to-transparent pb-3 opacity-0 transition-opacity group-hover:opacity-100">
-              <span className="text-xs font-medium text-white">
-                点击查看大图
-              </span>
-            </div>
-          </button>
-          <div className="mt-2 flex justify-center">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDownloadImage}
-              className="rounded-full text-xs"
-            >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              保存分享图
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Messages */}
       <ScrollArea className="min-h-0 flex-1" viewportClassName="pr-1">
@@ -134,15 +103,25 @@ export function HistoryDetail({
           {/* Bottom actions */}
           <div className="flex flex-wrap justify-center gap-3 pt-4">
             {shareImage ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadImage}
-                className="rounded-full"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                保存分享图
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowImageModal(true)}
+                  className="rounded-full"
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  查看分享图
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDownloadImage}
+                  className="rounded-full"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  保存图片
+                </Button>
+              </>
             ) : (
               <Button
                 onClick={() => setShowShareCard(true)}
@@ -174,18 +153,34 @@ export function HistoryDetail({
         </div>
       </ScrollArea>
 
-      {/* Full image modal */}
-      {showFullImage && shareImage && (
+      {/* Image modal */}
+      {showImageModal && shareImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onClick={() => setShowFullImage(false)}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => setShowImageModal(false)}
         >
           <img
             src={shareImage}
             alt="分享图"
-            className="max-h-[90vh] max-w-full rounded-2xl shadow-2xl"
+            className="max-h-[80vh] max-w-full rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
+          <div className="flex gap-3" onClick={(e) => e.stopPropagation()}>
+            <Button
+              onClick={handleDownloadImage}
+              className="rounded-full bg-indigo-600 text-white hover:bg-indigo-500"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              保存图片
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowImageModal(false)}
+              className="rounded-full border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              关闭
+            </Button>
+          </div>
         </div>
       )}
 

@@ -170,13 +170,13 @@ export function ShareCard({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="flex max-h-[90vh] flex-col items-center gap-4"
+          className="flex max-h-[90vh] flex-col items-center gap-4 overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Share Card */}
           <div
             ref={cardRef}
-            className="w-[400px] overflow-hidden rounded-3xl p-6"
+            className="w-[400px] rounded-3xl p-6"
             style={{
               background:
                 "linear-gradient(135deg, #0f0e1a 0%, #1a1a2e 40%, #16213e 100%)",
